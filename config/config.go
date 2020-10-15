@@ -7,62 +7,48 @@ import (
 )
 
 var (
-	Token string
+	Token     string
 	BotPrefix string
-	
-	config *newConfig
+
+	// Config ConfigsType
 )
 
-type newConfig struct {
-	Token       string `json:"Token"`
-	BotPrefix string `json:"BotPrefix"`
-}
+// type ConfigsType struct {
+// 	Token     string `json:"token"`
+// 	BotPrefix string `json:"bot_prefix"`
+// }
 
 func ReadConfig() error {
 	fmt.Println("Reading from config file...")
-	
-	file, err := ioutil.ReadFile("./config.json")
-	
+
+	cbs, err := ioutil.ReadFile("./config.json")
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
-	
+
+	sbs, err := ioutil.ReadFile("./secrets.json")
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("reading working")
-	
-	err = json.Unmarshal(file, &config)
-	
+
+	var c struct{ BotPrefix string }
+	var s struct{ Token string }
+
+	err = json.Unmarshal(cbs, &c)
 	if err != nil {
-		fmt.Println(err.Error())
 		return err
 	}
-	
-	Token = config.Token
-	BotPrefix = config.BotPrefix
-	
+
+	err = json.Unmarshal(sbs, &s)
+	if err != nil {
+		return err
+	}
+
+	BotPrefix = c.BotPrefix
+	Token = s.Token
+
+	// Config = ConfigsType{Token: s.Token, BotPrefix: c.BotPrefix}
 	return nil
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

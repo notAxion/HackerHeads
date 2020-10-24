@@ -7,11 +7,17 @@ import (
 )
 
 var (
-	Token     string
+	Token     string 
 	BotPrefix string
 
 	// Config ConfigsType
 )
+
+var c struct{ 
+	BotPrefix string `json:"bot_prefix"`
+}
+var s struct{ Token string `json:"token"` }
+
 
 // type ConfigsType struct {
 // 	Token     string `json:"token"`
@@ -33,8 +39,6 @@ func ReadConfig() error {
 
 	fmt.Println("reading working")
 
-	var c struct{ BotPrefix string }
-	var s struct{ Token string }
 
 	err = json.Unmarshal(cbs, &c)
 	if err != nil {

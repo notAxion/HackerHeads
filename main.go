@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"./config"
 	"./bot"
+	"./config"
 )
 
 

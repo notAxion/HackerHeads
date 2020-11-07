@@ -32,9 +32,7 @@ func Start() {
 	goBot.AddHandler(ready)
 
 	goBot.AddHandler(test)
-
-	goBot.AddHandler(manageChannels)
-
+	
 	err = goBot.Open()
 
 	if err != nil {
@@ -116,43 +114,13 @@ func test(s *dg.Session, m *dg.MessageCreate) {
 		return
 	}
 
-	textPerm := &dg.PermissionOverwrite{
-		ID:   "772504744341798913",
-		Type: "role",
-		Deny: 0x800 | 0x40,
-	}
-	data := &dg.ChannelEdit{
-		Position:             9,
-		PermissionOverwrites: []*dg.PermissionOverwrite{textPerm},
-	}
-
-	chnns, _ := s.GuildChannels(m.GuildID)
-	for i := range chnns {
-		if chnns[i].Type == 0 && chnns[i].ID == "765909517879476224" {
-			temp, err := s.ChannelEditComplex("765909517879476224", data)
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-
-			fmt.Println(temp.Name)
-		}
-	}
-	s.ChannelMessageSend(m.ChannelID, "done")
+	
 	//msg, _ := s.ChannelMessageSend(m.ChannelID, "not edited")
 	//s.ChannelMessageEdit(m.ChannelID, msg.ID, "edited")
 	//s.MessageReactionAdd("765909517879476224","768750535464714271","232720527448342530")
 
 }
 
-func manageChannels(s *dg.Session, chns *dg.ChannelCreate) {
-	err := features.RevokeChannelPerms(s, chns)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	fmt.Println(chns.Name, "was been changed.")
-}
 
 /*
 func validID(s *dg.Session, m *dg.MessageCreate, id string ) bool  {

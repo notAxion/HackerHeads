@@ -12,6 +12,7 @@ import (
 
 //											***		M U T E		***
 
+// Mute command that will mute the user so that he can't talk or chat in any channel however they an join the VC and will be able to see the message history by default
 func Mute(s *dg.Session, m *dg.MessageCreate) {
 	//if !(already created) :
 	if m.Content != ".mute" {
@@ -27,13 +28,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 
 	//  RevokeChannelPerms
 	/*
-		tempChan := &dg.ChannelCreate{
-			Channel: &dg.Channel{
-				GuildID: m.GuildID,
-			},
-		}
-
-		err := RevokeChannelPerms(s, tempChan)
+		err := revokeChannelPerms(s, m)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -45,6 +40,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 
 //											***		P I N G 	***
 
+//Ping : checks the ping of the bot in millisecond
 func Ping(s *dg.Session, m *dg.MessageCreate) {
 	// get current time, send message, subtract new current time with old, update said message to show that time
 	u := t.Now()
@@ -59,6 +55,7 @@ func Ping(s *dg.Session, m *dg.MessageCreate) {
 
 // 											***		R E M I N D		***
 
+//Remind command will remind after a specified time and you should have to add some reminder description to get the reminder
 func Remind(s *dg.Session, m *dg.MessageCreate) {
 	if m.Content[1:] == "remind" || m.Content[1:] == "remind " {
 		helpRemind(s, m.ChannelID)
@@ -123,6 +120,7 @@ func helpRemind(s *dg.Session, chnID string) {
 
 //												***		W A R N		***
 
+// Warn command that will warn that user upon the specified reason and dm them if possible (todo add logging to a DB)
 func Warn(s *dg.Session, m *dg.MessageCreate) {
 
 	if m.Content[1:] == "warn" || m.Content[1:] == "warn " {
@@ -204,10 +202,11 @@ func createMuteRole(s *dg.Session, m *dg.MessageCreate) error {
 	return nil
 }
 
-func RevokeChannelPerms(s *dg.Session, createdchan *dg.ChannelCreate) error {
+// revokeChannelPerms will go on each channels of the guild when a mute command is called called for the first time in a guild
+func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate) error {
 	muteRoleID := "772777995025907732"
 
-	chans, err := s.GuildChannels(createdchan.GuildID)
+	chans, err := s.GuildChannels(m.GuildID)
 	if err != nil {
 		return err
 	}
@@ -241,6 +240,43 @@ func RevokeChannelPerms(s *dg.Session, createdchan *dg.ChannelCreate) error {
 		}
 	}
 	return nil
+}
+
+// 											***		AddMuteRole		***
+
+// AddMuteRole Will add the mute role to the channel called through bot.ManangeChannel
+func AddMuteRole(s *dg.Session, chans *dg.ChannelCreate) {
+	muteRoleID := "772777995025907732"
+	textPerm := &dg.PermissionOverwrite{
+		ID:   muteRoleID,
+		Type: "role",
+		Deny: 0x800 | 0x40,
+	}
+	textEdit := &dg.ChannelEdit{
+		PermissionOverwrites: []*dg.PermissionOverwrite{textPerm},
+	}
+	voicePerm := &dg.PermissionOverwrite{
+		ID:   muteRoleID,
+		Type: "role",
+		Deny: 0x200000,
+	}
+	voiceEdit := &dg.ChannelEdit{
+		PermissionOverwrites: []*dg.PermissionOverwrite{voicePerm},
+	}
+
+	// This functions will add the role with the perms needed for the mute role
+
+	if chans.Type == 0 {
+		_, err := s.ChannelEditComplex(chans.ID, textEdit)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	} else if chans.Type == 2 {
+		_, err := s.ChannelEditComplex(chans.ID, voiceEdit)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	}
 }
 
 //												***		validUserID		***

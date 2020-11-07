@@ -145,13 +145,10 @@ func test(s *dg.Session, m *dg.MessageCreate) {
 
 }
 
-func manageChannels(s *dg.Session, chns *dg.ChannelCreate) {
-	err := features.RevokeChannelPerms(s, chns)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	fmt.Println(chns.Name, "was been changed.")
+func manageChannels(s *dg.Session, chans *dg.ChannelCreate) {
+
+	features.AddMuteRole(s, chans)
+
 }
 
 /*

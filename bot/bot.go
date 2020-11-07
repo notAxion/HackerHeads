@@ -6,14 +6,14 @@ import (
 
 	"../config"
 	"../features"
-	"github.com/bwmarrin/discordgo"
+	dg "github.com/bwmarrin/discordgo"
 )
 
 var BotID string
-var goBot *discordgo.Session
+var goBot *dg.Session
 
 func Start() {
-	goBot, err := discordgo.New("Bot " + config.Token)
+	goBot, err := dg.New("Bot " + config.Token)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -25,14 +25,15 @@ func Start() {
 		fmt.Println(err)
 	}
 
-
 	BotID = u.ID
 
 	goBot.AddHandler(messageCreate)
-	
+
 	goBot.AddHandler(ready)
-	
+
 	goBot.AddHandler(test)
+
+	goBot.AddHandler(manageChannels)
 
 	err = goBot.Open()
 
@@ -43,44 +44,50 @@ func Start() {
 	fmt.Println("Bot is Running")
 }
 
-func ready(s *discordgo.Session, event *discordgo.Ready) {
-	//set the playing status 
+func ready(s *dg.Session, event *dg.Ready) {
+	//set the playing status
 	s.UpdateStatus(0, "Bot in Development")
-	//since := 1 
+	//since := 1
+
 	/*
-	status := discordgo.UpdateStatusData{
-		//IdleSince: &since,
-		Game: &discordgo.Game{
-						Name: "Pydroid & Termux",
-						Type: 3,
-						Details: "Making this bot that you are watching in go",
-						TimeStamps: discordgo.TimeStamps{
-												StartTimestamp: 1602918742000,
-											},
-					},
-		AFK: false,
-		Status: "test",
-	}
-	err := s.UpdateStatusComplex(status)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+		status := dg.UpdateStatusData{
+			//IdleSince: &since,
+			Game: &dg.Game{
+							Name: "Pydroid & Termux",
+							Type: 3,
+							Details: "Making this bot that you are watching in go",
+							TimeStamps: dg.TimeStamps{
+													StartTimestamp: 1602918742000,
+												},
+						},
+			AFK: false,
+			Status: "test",
+		}
+		err := s.UpdateStatusComplex(status)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	*/
 	//s.UpdateListeningStatus("Mr.Makra")
-	
+
 }
 
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 
 	if str.HasPrefix(m.Content, config.BotPrefix) {
 
-		if m.Author.ID == BotID {
+		if m.Author.ID == BotID || m.Author.Bot {
 			return
 		}
 		cmd := command(m.Content)
-		fmt.Println(config.BotPrefix)
 		switch cmd {
+		case "mute":
+			features.Mute(s, m)
+			break
+		case "ping":
+			features.Ping(s, m)
+			break
 		case "remind":
 			features.Remind(s, m)
 			break
@@ -88,36 +95,74 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			features.Warn(s, m)
 			break
 		default:
-			s.ChannelMessageSend(m.ChannelID, "**WHAT !?** :thinking::thinking:" )
+			s.ChannelMessageSend(m.ChannelID, "**WHAT !?** :thinking::thinking:")
 		}
 	}
 
 	if m.Content == "hi bot" || m.Content == "Hi bot" {
 		s.ChannelMessageSend(m.ChannelID, "```Hello Hackers```")
-	}
-	if m.ChannelID == "765909517879476224" {
-		fmt.Println(m.Content)
-	}
+	} /*
+		if m.ChannelID == "765909517879476224" {
+			fmt.Println(m.Content)
+		}*/
 }
 
-func test(s *discordgo.Session, m *discordgo.MessageCreate) {
-	
+func test(s *dg.Session, m *dg.MessageCreate) {
+
 	if m.Author.ID == BotID {
 		return
 	}
+	if m.Content != "test" {
+		return
+	}
+
+	textPerm := &dg.PermissionOverwrite{
+		ID:   "772504744341798913",
+		Type: "role",
+		Deny: 0x800 | 0x40,
+	}
+	data := &dg.ChannelEdit{
+		Position:             9,
+		PermissionOverwrites: []*dg.PermissionOverwrite{textPerm},
+	}
+
+	chnns, _ := s.GuildChannels(m.GuildID)
+	for i := range chnns {
+		if chnns[i].Type == 0 && chnns[i].ID == "765909517879476224" {
+			temp, err := s.ChannelEditComplex("765909517879476224", data)
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+
+			fmt.Println(temp.Name)
+		}
+	}
+	s.ChannelMessageSend(m.ChannelID, "done")
+	//msg, _ := s.ChannelMessageSend(m.ChannelID, "not edited")
+	//s.ChannelMessageEdit(m.ChannelID, msg.ID, "edited")
 	//s.MessageReactionAdd("765909517879476224","768750535464714271","232720527448342530")
-	
+
+}
+
+func manageChannels(s *dg.Session, chns *dg.ChannelCreate) {
+	err := features.RevokeChannelPerms(s, chns)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(chns.Name, "was been changed.")
 }
 
 /*
-func validID(s *discordgo.Session, m *discordgo.MessageCreate, id string ) bool  {
-	
+func validID(s *dg.Session, m *dg.MessageCreate, id string ) bool  {
+
 	if m.Author.ID == s.State.User.ID {
 		return false
 	}
 	id = str.Trim(id, "<>&!@#")
 	_, err:= s.GuildMember(m.GuildID, m.Content)
-	
+
 	if err == nil {
 		return true
 	}

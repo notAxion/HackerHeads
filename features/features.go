@@ -10,40 +10,7 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-//											***		M U T E		***
-
-func Mute(s *dg.Session, m *dg.MessageCreate) {
-	//if !(already created) :
-	if m.Content != ".mute" {
-		return
-	}
-	/*
-		err := createMuteRole(s, m)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	*/
-
-	//  RevokeChannelPerms
-	/*
-		tempChan := &dg.ChannelCreate{
-			Channel: &dg.Channel{
-				GuildID: m.GuildID,
-			},
-		}
-
-		err := RevokeChannelPerms(s, tempChan)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		s.ChannelMessageSend(m.ChannelID, "Done")
-	*/
-}
-
-//											***		P I N G 	***
+//											***		P I N G 		***
 
 func Ping(s *dg.Session, m *dg.MessageCreate) {
 	// get current time, send message, subtract new current time with old, update said message to show that time
@@ -188,60 +155,6 @@ func helpWarn(s *dg.Session, chnID string) {
 
 //-----------------------------------------------------------||-----------------------------------------------------------
 
-//												***		createMuteRole		***
-
-func createMuteRole(s *dg.Session, m *dg.MessageCreate) error {
-	muteRole, err := s.GuildRoleCreate(m.GuildID)
-	if err != nil {
-		return err
-	}
-
-	perm := 0x400 | 0x10000 | 0x100000                                                           //(for  muted role)
-	_, err = s.GuildRoleEdit(m.GuildID, muteRole.ID, "test1Muted", 0x6b6b6b, false, perm, false) // bools are hoist and
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func RevokeChannelPerms(s *dg.Session, createdchan *dg.ChannelCreate) error {
-	muteRoleID := "772777995025907732"
-
-	chans, err := s.GuildChannels(createdchan.GuildID)
-	if err != nil {
-		return err
-	}
-	textPerm := &dg.PermissionOverwrite{
-		ID:   muteRoleID,
-		Type: "role",
-		Deny: 0x800 | 0x40,
-	}
-	textEdit := &dg.ChannelEdit{
-		PermissionOverwrites: []*dg.PermissionOverwrite{textPerm},
-	}
-	voicePerm := &dg.PermissionOverwrite{
-		ID:   muteRoleID,
-		Type: "role",
-		Deny: 0x200000,
-	}
-	voiceEdit := &dg.ChannelEdit{
-		PermissionOverwrites: []*dg.PermissionOverwrite{voicePerm},
-	}
-	for i := range chans {
-		if chans[i].Type == 0 {
-			_, err = s.ChannelEditComplex(chans[i].ID, textEdit)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		} else if chans[i].Type == 2 {
-			_, err = s.ChannelEditComplex(chans[i].ID, voiceEdit)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}
-	}
-	return nil
-}
 
 //												***		validUserID		***
 

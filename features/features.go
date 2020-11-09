@@ -14,10 +14,10 @@ import (
 
 // Mute command that will mute the user so that he can't talk or chat in any channel however they an join the VC and will be able to see the message history by default
 func Mute(s *dg.Session, m *dg.MessageCreate) {
-	//if !(already created) :
 	if m.Content != ".mute" {
 		return
 	}
+	//if !(already created) :
 	/*
 		err := createMuteRole(s, m)
 		if err != nil {
@@ -25,8 +25,6 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 			return
 		}
 	*/
-
-	//  RevokeChannelPerms
 	/*
 		err := revokeChannelPerms(s, m)
 		if err != nil {
@@ -36,6 +34,39 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 
 		s.ChannelMessageSend(m.ChannelID, "Done")
 	*/
+	// .mute [@user] <time> [reason]
+	args := fieldsN(m.Content, 3)
+	if len(args) == 0 {
+		//helpMute(s, m.ChannelID)!valid
+	}
+
+	muteID, valid := validUserID(s, m, args[1])
+	if !valid {
+		idError := &dg.MessageEmbed{
+			Type:  "rich",
+			Title: fmt.Sprintf(":x: **I can't find that user, %s**", args[1]),
+			Color: 0xff0000,
+		}
+		_, err := s.ChannelMessageSendEmbed(m.ChannelID, idError)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		return
+	}
+	user, err := s.User(muteID)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	limitArgs := fieldsN(args[2], 2)
+	if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
+
+	}
+	limit, err := t.ParseDuration(limitArgs[0])
+
+	if err == nil {
+
+	}
 }
 
 //											***		P I N G 	***
@@ -140,8 +171,8 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 		_, err := s.ChannelMessageSendEmbed(m.ChannelID, idError)
 		if err != nil {
 			fmt.Println(err.Error())
-			return
 		}
+		return
 	}
 	user, err := s.User(warnID)
 	if err != nil {
@@ -311,8 +342,11 @@ func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool
 //												***		fieldsN		***
 
 func fieldsN(s string, n int) []string {
-	if len(s) == 0 {
+	if len(s) == 0 || n < 1 {
 		return []string{}
+	}
+	if n == 1 {
+		return []string{s}
 	}
 	var end int = 1
 	var i int
@@ -324,7 +358,7 @@ func fieldsN(s string, n int) []string {
 			end++
 		}
 		if s[i] != ' ' && end == n {
-			break // i - 1 is the endpoint that i will pass
+			break
 		}
 	}
 	if end != n {

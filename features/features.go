@@ -14,6 +14,9 @@ import (
 
 // Mute command that will mute the user so that he can't talk or chat in any channel however they an join the VC and will be able to see the message history by default
 func Mute(s *dg.Session, m *dg.MessageCreate) {
+	muteRoleID := "772777995025907732"
+	var dmOpen bool
+	
 	if m.Content != ".mute" {
 		return
 	}
@@ -38,6 +41,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	args := fieldsN(m.Content, 3)
 	if len(args) == 0 {
 		//helpMute(s, m.ChannelID)!valid
+		return
 	}
 
 	muteID, valid := validUserID(s, m, args[1])
@@ -62,16 +66,27 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
 		//goto noLimit
 	}
-	limit, err := t.ParseDuration(limitArgs[0])
-
+	limit, errLimit := t.ParseDuration(limitArgs[0])
+	err = s.GuildMemberRoleAdd(m.GuildID, user.ID, muteRoleID)
+	if err != nil {
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("sorry i cant update the role  of %s#%s", user.Username, user.Discriminator ))
+		return
+	}
+	dmChan, err := s.UserChannelCreate(user.ID)
 	if err == nil {
+		dmOpen = true
+	}
+	
+	if errLimit == nil {
 		/*
-			addrole
-			chnmsgsend
+			addrole ../
+			chnmsgsend ../
 			if ..
+			send dm msg
 			start timer
 			call unmute
 		*/
+		
 	}
 }
 

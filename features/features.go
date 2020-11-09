@@ -62,6 +62,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 		fmt.Println(err.Error())
 		return
 	}
+	guild, _ := s.Guild(m.GuildID) // ** todo try some other way to get the guild name cause i have to get all values just to get the guild name
 	limitArgs := fieldsN(args[2], 2)
 	if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
 		//goto noLimit
@@ -77,7 +78,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 		dmOpen = true
 	}
 	
-	if errLimit == nil {
+	if errLimit == nil { // this mean limit exists
 		/*
 			addrole ../
 			chnmsgsend ../
@@ -86,6 +87,9 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 			start timer
 			call unmute
 		*/
+		if dmOpen {
+			s.ChannelMessageSend(dmChan, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
+		}
 		
 	}
 }

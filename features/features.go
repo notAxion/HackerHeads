@@ -60,12 +60,18 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	}
 	limitArgs := fieldsN(args[2], 2)
 	if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
-
+		//goto noLimit
 	}
 	limit, err := t.ParseDuration(limitArgs[0])
 
 	if err == nil {
-
+		/*
+			addrole
+			chnmsgsend
+			if ..
+			start timer
+			call unmute
+		*/
 	}
 }
 

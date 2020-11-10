@@ -16,10 +16,7 @@ import (
 func Mute(s *dg.Session, m *dg.MessageCreate) {
 	muteRoleID := "772777995025907732"
 	var dmOpen bool
-	
-	if m.Content != ".mute" {
-		return
-	}
+
 	//if !(already created) :
 	/*
 		err := createMuteRole(s, m)
@@ -37,7 +34,13 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 
 		s.ChannelMessageSend(m.ChannelID, "Done")
 	*/
-	// .mute [@user] <time> [reason]
+
+	// Help mute
+	if m.Content[1:] == "mute" || m.Content[1:] == "mute " {
+		helpMute(s, m.ChannelID)
+		return
+	}
+	//  Getting the args
 	args := fieldsN(m.Content, 3)
 	if len(args) == 0 {
 		//helpMute(s, m.ChannelID)!valid
@@ -70,27 +73,54 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	limit, errLimit := t.ParseDuration(limitArgs[0])
 	err = s.GuildMemberRoleAdd(m.GuildID, user.ID, muteRoleID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("sorry i cant update the role  of %s#%s", user.Username, user.Discriminator ))
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("sorry i cant update the role  of %s#%s", user.Username, user.Discriminator))
 		return
 	}
-	dmChan, err := s.UserChannelCreate(user.ID)
+	muteEmbed := &dg.MessageEmbed{
+		Type:  "rich",
+		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been muted. ‎*", user.Username, user.Discriminator),
+		Color: 0x00fa00,
+	}
+	// Sending the embed text
+	_, err = s.ChannelMessageSendEmbed(m.ChannelID, muteEmbed)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	//  Creates dm channel for the the muted user
+	muteDMChan, err := s.UserChannelCreate(user.ID)
 	if err == nil {
 		dmOpen = true
 	}
-	
+
 	if errLimit == nil { // this mean limit exists
-		/*
-			addrole ../
-			chnmsgsend ../
-			if ..
-			send dm msg
-			start timer
-			call unmute
-		*/
 		if dmOpen {
-			s.ChannelMessageSend(dmChan, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
+			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
 		}
-		
+		t.Sleep(limit)
+		s.GuildMemberRoleRemove(m.GuildID, user.ID, muteRoleID)
+
+	} else {
+		if dmOpen {
+			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
+		}
+	}
+}
+
+//												*** 	helpMute	***
+
+func helpMute(s *dg.Session, chnID string) {
+	desc := fmt.Sprintf("\n**Description**: muting a member from a server will revoke them from chatting or talking from a Channel, however then can see the message history and will be able to connect in the channels by default.\n**Usage**: %smute [@user] <limit> [reason]  \n**Example**:\n\t%smute @raider 3d be happy with muted", config.BotPrefix, config.BotPrefix)
+	helpEmbed := &dg.MessageEmbed{
+		Type:        "rich",
+		Title:       fmt.Sprintf("\n**Command**: mute"),
+		Description: desc,
+		Color:       0x00ff00,
+	}
+	_, err := s.ChannelMessageSendEmbed(chnID, helpEmbed)
+
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 }
 
@@ -174,20 +204,30 @@ func helpRemind(s *dg.Session, chnID string) {
 	}
 }
 
+// 												***		U N M U T E 	***
+
+//
+/*
+func Unmute(s *dg.Session, m *dg.MessageCreate) {
+
+}
+*/
 //												***		W A R N		***
 
 // Warn command that will warn that user upon the specified reason and dm them if possible (todo add logging to a DB)
 func Warn(s *dg.Session, m *dg.MessageCreate) {
-
+	// Help warn
 	if m.Content[1:] == "warn" || m.Content[1:] == "warn " {
 		helpWarn(s, m.ChannelID)
+		return
 	}
+	//  Getting the args
 	args := fieldsN(m.Content, 3)
 	if len(args) == 0 {
 		helpWarn(s, m.ChannelID)
 	}
 	warnID, valid := validUserID(s, m, args[1])
-	if !valid {
+	if !valid { // provided id is not valid
 		idError := &dg.MessageEmbed{
 			Type:  "rich",
 			Title: fmt.Sprintf(":x: **I can't find that user, %s**", args[1]),
@@ -209,13 +249,17 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been warned. ‎*", user.Username, user.Discriminator),
 		Color: 0x00fa00,
 	}
-	warnChn, err := s.UserChannelCreate(warnID)
-	guild, _ := s.Guild(m.GuildID)
-	_, err = s.ChannelMessageSend(warnChn.ID, fmt.Sprintf("You were warned in %s for %s", guild.Name, args[2]))
+
+	//  Creates dm channel for the the warned user
+	warnDMChn, err := s.UserChannelCreate(warnID)
+	guild, _ := s.Guild(m.GuildID) // ** todo try some other way to get the guild name cause i have to get all values just to get the guild name
+	_, err = s.ChannelMessageSend(warnDMChn.ID, fmt.Sprintf("You were warned in %s for %s", guild.Name, args[2]))
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
+
+	//  Sending the embeded text
 	_, err = s.ChannelMessageSendEmbed(m.ChannelID, warnEmbed)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -301,7 +345,7 @@ func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate) error {
 // 											***		AddMuteRole		***
 
 // AddMuteRole Will add the mute role to the channel called through bot.ManangeChannel
-func AddMuteRole(s *dg.Session, chans *dg.ChannelCreate) {
+func AddMuteRole(s *dg.Session, chans *dg.ChannelCreate) { // ** todo move this to another file
 	muteRoleID := "772777995025907732"
 	textPerm := &dg.PermissionOverwrite{
 		ID:   muteRoleID,

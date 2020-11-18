@@ -10,6 +10,17 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
+// 											***		E V E N T 	***
+
+/*
+func Event(s *dg.Session, m *dg.MessageCreate) {
+	if m.Content != ".event" {
+		return
+	}
+
+}
+*/
+
 //											***		M U T E		***
 
 // Mute command that will mute the user so that he can't talk or chat in any channel however they an join the VC and will be able to see the message history by default

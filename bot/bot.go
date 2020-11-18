@@ -107,38 +107,17 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 		}*/
 }
 
-func test(s *dg.Session, m *dg.MessageCreate) {
+func test(s *dg.Session, m *dg.MessageDelete) {
 
-	if m.Author.ID == BotID {
-		return
-	}
-	if m.Content != "test" {
-		return
-	}
+	//if m.Author.ID == BotID {
+	//	return
+	//}
+	fmt.Println("deleted", m.Content)
+	// if m.Content != "test" {
+	// 	return
+	// }
 
-	textPerm := &dg.PermissionOverwrite{
-		ID:   "772504744341798913",
-		Type: "role",
-		Deny: 0x800 | 0x40,
-	}
-	data := &dg.ChannelEdit{
-		Position:             9,
-		PermissionOverwrites: []*dg.PermissionOverwrite{textPerm},
-	}
-
-	chnns, _ := s.GuildChannels(m.GuildID)
-	for i := range chnns {
-		if chnns[i].Type == 0 && chnns[i].ID == "765909517879476224" {
-			temp, err := s.ChannelEditComplex("765909517879476224", data)
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-
-			fmt.Println(temp.Name)
-		}
-	}
-	s.ChannelMessageSend(m.ChannelID, "done")
+	//fmt.Println(m.Type)
 	//msg, _ := s.ChannelMessageSend(m.ChannelID, "not edited")
 	//s.ChannelMessageEdit(m.ChannelID, msg.ID, "edited")
 	//s.MessageReactionAdd("765909517879476224","768750535464714271","232720527448342530")

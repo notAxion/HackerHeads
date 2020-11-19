@@ -10,16 +10,17 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
+var eventMap map[string]string
+
 // 											***		E V E N T 	***
 
-/*
 func Event(s *dg.Session, m *dg.MessageCreate) {
-	if m.Content != ".event" {
+	if m.Content[:12] != ".event start" {
 		return
 	}
+	args := fieldsN(m.Content, 3)
 
 }
-*/
 
 //											***		M U T E		***
 
@@ -406,6 +407,22 @@ func validUserID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
 // 												***		validChannelID		***
 
 func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
+
+	id = str.Trim(id, "<>&!@#")
+	chn, err := s.Channel(id)
+	if chn.GuildID != m.GuildID {
+		return "", false
+	}
+
+	if err == nil {
+		return id, true
+	}
+	return "", false
+}
+
+// 												***		validChannelID		***
+
+func validRolelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
 
 	id = str.Trim(id, "<>&!@#")
 	chn, err := s.Channel(id)

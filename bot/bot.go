@@ -34,9 +34,11 @@ func Start() {
 	goBot.AddHandler(test)
 
 	goBot.AddHandler(manageChannels)
-	
+
+	goBot.AddHandler(features.EventRoleAdd)
+
 	//goBot.AddHandler(maxmsgCount)
-	//st = *dg.State 
+	//st = *dg.State
 	//st.MaxMessageCount = 500
 	err = goBot.Open()
 
@@ -88,6 +90,8 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 		}
 		cmd := command(m.Content)
 		switch cmd {
+		case "event":
+			features.EventStop(s, m)
 		case "mute":
 			features.Mute(s, m)
 			break
@@ -115,15 +119,15 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 
 func test(s *dg.Session, m *dg.MessageCreate) {
 
-	if m.Content[:4] != "test" {
-	 	return
+	if m.Content != "test" {
+		return
 	}
-	id , valid := features.ValidRoleID(s, m, m.Content[5:])
-	if valid {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@&%s> exists", id))
-	} else {
-		s.ChannelMessageSend(m.ChannelID, "Doesnt exist")
-	}
+	// id , valid := features.ValidRoleID(s, m, m.Content[5:])
+	// if valid {
+	// 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@&%s> exists", id))
+	// } else {
+	// 	s.ChannelMessageSend(m.ChannelID, "Doesnt exist")
+	// }
 }
 
 func manageChannels(s *dg.Session, chans *dg.ChannelCreate) {
@@ -132,7 +136,7 @@ func manageChannels(s *dg.Session, chans *dg.ChannelCreate) {
 
 }
 
-func maxmsgCount (s *dg.Session, st *dg.State ) {
+func maxmsgCount(s *dg.Session, st *dg.State) {
 	st.MaxMessageCount = 500
 }
 

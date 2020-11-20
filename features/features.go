@@ -10,18 +10,62 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-var eventMap map[string]string
+var eventMap map[string]string = make(map[string]string) //stores the eventRoleID for each channel (map[ChannelID]eventRoleID) go to EventStop for more info # thanks to chanbakjsd from gophers
 
 // 											***		E V E N T 	***
-/*
-func Event(s *dg.Session, m *dg.MessageCreate) {
-	if m.Content[:12] != ".event start" {
+
+// EventStop
+func EventStop(s *dg.Session, m *dg.MessageCreate) {
+	if m.Content[1:] == "event" || m.Content[1:] == "event " {
+		//helpEvent(s, m.ChannelID)
 		return
 	}
-	args := fieldsN(m.Content, 3)
+	args := fieldsN(m.Content, 2)
+	if len(args) == 0 {
+		//helpEvent(s, m.ChannelID)
+	}
+	if args[1] == "stop" {
+		eventMap[m.ChannelID] = ""
+		s.ChannelMessageSend(m.ChannelID, "event is stopped")
+	} else if args[1][:5] == "start" {
+		EventStart(s, m)
+		return
+	} else {
+		//helpEvent(s, m.ChannelID)
+		return
+	}
 
 }
-*/
+func EventStart(s *dg.Session, m *dg.MessageCreate) {
+	args := fieldsN(m.Content, 3)
+	if len(args) == 0 {
+		//helpEvent(s, m.ChannelID)
+		return
+	}
+	eventRoleID, valid := validRoleID(s, m, args[2])
+	if !valid {
+		//helpEvent(s,m.ChannelID)
+		s.ChannelMessageSend(m.ChannelID, "something wrong with the role tag")
+		return
+	}
+	eventMap[m.ChannelID] = eventRoleID
+	s.ChannelMessageSend(m.ChannelID, "event is started")
+
+}
+func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
+	//if m.Content == ".event stop" {
+	// do the stoping here
+	//}
+	if eventMap[m.ChannelID] == "" {
+		return
+	}
+	eventRoleID := eventMap[m.ChannelID]
+	err := s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, eventRoleID)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
 //											***		M U T E		***
 
 // Mute command that will mute the user so that he can't talk or chat in any channel however they an join the VC and will be able to see the message history by default
@@ -55,7 +99,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	//  Getting the args
 	args := fieldsN(m.Content, 3)
 	if len(args) == 0 {
-		//helpMute(s, m.ChannelID)!valid
+		helpMute(s, m.ChannelID) //!valid
 		return
 	}
 
@@ -422,7 +466,7 @@ func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool
 
 // 												***		validRoleID		***
 
-func ValidRoleID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
+func validRoleID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
 
 	id = str.Trim(id, "<>&!@#")
 	err := s.GuildMemberRoleAdd(m.GuildID, s.State.User.ID, id)
@@ -434,7 +478,9 @@ func ValidRoleID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
 }
 
 //												***		fieldsN		***
-
+// fieldN is just a upgraded version of strings.Fields the extra thing that it does is,
+// it returns slice of first 'N' substrings of the passed input
+// it is similer like Split and SplitN but without any white spaces in any slice like Fields
 func fieldsN(s string, n int) []string {
 	if len(s) == 0 || n < 1 {
 		return []string{}

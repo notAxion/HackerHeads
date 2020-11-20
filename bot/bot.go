@@ -34,7 +34,10 @@ func Start() {
 	goBot.AddHandler(test)
 
 	goBot.AddHandler(manageChannels)
-
+	
+	//goBot.AddHandler(maxmsgCount)
+	//st = *dg.State 
+	//st.MaxMessageCount = 500
 	err = goBot.Open()
 
 	if err != nil {
@@ -47,6 +50,9 @@ func Start() {
 func ready(s *dg.Session, event *dg.Ready) {
 	//set the playing status
 	s.UpdateStatus(0, "Bot in Development")
+	s.StateEnabled = true
+	st := s.State
+	st.MaxMessageCount = 500
 	//since := 1
 
 	/*
@@ -107,27 +113,27 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 		}*/
 }
 
-func test(s *dg.Session, m *dg.MessageDelete) {
+func test(s *dg.Session, m *dg.MessageCreate) {
 
-	//if m.Author.ID == BotID {
-	//	return
-	//}
-	fmt.Println("deleted", m.Content)
-	// if m.Content != "test" {
-	// 	return
-	// }
-
-	//fmt.Println(m.Type)
-	//msg, _ := s.ChannelMessageSend(m.ChannelID, "not edited")
-	//s.ChannelMessageEdit(m.ChannelID, msg.ID, "edited")
-	//s.MessageReactionAdd("765909517879476224","768750535464714271","232720527448342530")
-
+	if m.Content[:4] != "test" {
+	 	return
+	}
+	id , valid := features.ValidRoleID(s, m, m.Content[5:])
+	if valid {
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@&%s> exists", id))
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Doesnt exist")
+	}
 }
 
 func manageChannels(s *dg.Session, chans *dg.ChannelCreate) {
 
 	features.AddMuteRole(s, chans)
 
+}
+
+func maxmsgCount (s *dg.Session, st *dg.State ) {
+	st.MaxMessageCount = 500
 }
 
 /*

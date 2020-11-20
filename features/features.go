@@ -13,7 +13,7 @@ import (
 var eventMap map[string]string
 
 // 											***		E V E N T 	***
-
+/*
 func Event(s *dg.Session, m *dg.MessageCreate) {
 	if m.Content[:12] != ".event start" {
 		return
@@ -21,7 +21,7 @@ func Event(s *dg.Session, m *dg.MessageCreate) {
 	args := fieldsN(m.Content, 3)
 
 }
-
+*/
 //											***		M U T E		***
 
 // Mute command that will mute the user so that he can't talk or chat in any channel however they an join the VC and will be able to see the message history by default
@@ -420,16 +420,13 @@ func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool
 	return "", false
 }
 
-// 												***		validChannelID		***
+// 												***		validRoleID		***
 
-func validRolelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
+func ValidRoleID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
 
 	id = str.Trim(id, "<>&!@#")
-	chn, err := s.Channel(id)
-	if chn.GuildID != m.GuildID {
-		return "", false
-	}
-
+	err := s.GuildMemberRoleAdd(m.GuildID, s.State.User.ID, id)
+	s.GuildMemberRoleRemove(m.GuildID, s.State.User.ID, id)
 	if err == nil {
 		return id, true
 	}

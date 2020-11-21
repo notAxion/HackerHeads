@@ -17,8 +17,8 @@ var eventMap map[string]string = make(map[string]string) //stores the eventRoleI
 
 // EventStart will start an instance of an event for that channel
 // So afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent
-// and removes the role when a message is deleted within the event period 
-func EventStart(s *dg.Session, m *dg.MessageCreate) {   //# todo check the role hierarchy to check if person that is sending the command does himself has the perms to add that role someone else
+// and removes the role when a message is deleted within the event period
+func EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check the role hierarchy to check if person that is sending the command does himself has the perms to add that role someone else
 	if m.Content[1:] == "event" || m.Content[1:] == "event " {
 		//helpEvent(s, m.ChannelID)
 		return
@@ -34,14 +34,23 @@ func EventStart(s *dg.Session, m *dg.MessageCreate) {   //# todo check the role 
 	}
 	eventRoleID, valid := validRoleID(s, m, args[2])
 	if !valid {
-		//# embed = "Either that role doesn't exist or I don't have perms to add that role to anyone"
-		s.ChannelMessageSend(m.ChannelID, "something wrong with the role tag")
+		roleinvalidEmbed := &dg.MessageEmbed{
+			Type:        "rich",
+			Title:       "Invvalid Role ID",
+			Description: "Role doesn't exist \n or I don't have perms to add that role to anyone tip: check the role hierarchy and put it below than my highest role",
+			Color:       0xff0000,
+		}
+		_, err := s.ChannelMessageSendEmbed(m.ChannelID, roleinvalidEmbed)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 		return
 	}
 	eventMap[m.ChannelID] = eventRoleID
 	s.ChannelMessageSend(m.ChannelID, "event is started")
 
 }
+
 // EventRoleAdd will be adding roles to the users after the event is started also this will handle the event stop command
 func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 	//if m.Content == ".event stop" {
@@ -50,14 +59,14 @@ func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 	if eventMap[m.ChannelID] == "" {
 		return
 	}
-	
+
 	//This if part will check for the event stop command and will stop the event
 	if str.HasPrefix(m.Content, config.BotPrefix) {
-		args:= fieldsN(m.Content[1:], 2)
+		args := fieldsN(m.Content[1:], 2)
 		if len(args) == 0 {
 			return
 		}
-		if  args[0] == "event" && args[1] == "stop" {
+		if args[0] == "event" && args[1] == "stop" {
 			eventMap[m.ChannelID] = ""
 			return
 		}

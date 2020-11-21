@@ -91,7 +91,7 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 		cmd := command(m.Content)
 		switch cmd {
 		case "event":
-			features.EventStop(s, m)
+			features.EventStart(s, m)
 		case "mute":
 			features.Mute(s, m)
 			break

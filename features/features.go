@@ -10,6 +10,9 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
+//#todo add a variable aka var = config.BotPrefix and replace every config.BotPrefix with that var
+//#and also change every help funcs and use different variables for the desc.
+
 var eventMap map[string]string = make(map[string]string) //stores the eventRoleID for each channel (map[ChannelID]eventRoleID) go to EventStop for more info # thanks to chanbakjsd from gophers
 
 // 													***		E V E N T 	***
@@ -20,16 +23,16 @@ var eventMap map[string]string = make(map[string]string) //stores the eventRoleI
 // and removes the role when a message is deleted within the event period
 func EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check the role hierarchy to check if person that is sending the command does himself has the perms to add that role someone else
 	if m.Content[1:] == "event" || m.Content[1:] == "event " {
-		//helpEvent(s, m.ChannelID)
+		helpEvent(s, m.ChannelID)
 		return
 	}
 	args := fieldsN(m.Content[1:], 3)
 	if len(args) == 0 {
-		//helpEvent(s, m.ChannelID)
+		helpEvent(s, m.ChannelID)
 		return
 	}
 	if args[1] != "start" {
-		//helpEvent(s, m.ChannelID)
+		helpEvent(s, m.ChannelID)
 		return
 	}
 	eventRoleID, valid := validRoleID(s, m, args[2])
@@ -53,9 +56,6 @@ func EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check the role hi
 
 // EventRoleAdd will be adding roles to the users after the event is started also this will handle the event stop command
 func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
-	//if m.Content == ".event stop" {
-	// do the stoping here
-	//}
 	if eventMap[m.ChannelID] == "" {
 		return
 	}
@@ -73,6 +73,23 @@ func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 	}
 	eventRoleID := eventMap[m.ChannelID]
 	err := s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, eventRoleID)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+// 											***		helpEvent		***
+
+func helpEvent(s *dg.Session, chnID string) {
+	desc := fmt.Sprintf("\n**Description**:  EventStart will start an instance of an event for that channel \nSo afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent \nand removes the role when a message is deleted within the event period.\n**Usage**: %sevent < [start] || [stop] > {@role}  \n**Example**:\n\t%sevent start @participant \n\t%sevent stop", config.BotPrefix, config.BotPrefix, config.BotPrefix)
+	helpEmbed := &dg.MessageEmbed{
+		Type:        "rich",
+		Title:       fmt.Sprintf("\n**Command**: event"),
+		Description: desc,
+		Color:       0x00fa00,
+	}
+	_, err := s.ChannelMessageSendEmbed(chnID, helpEmbed)
+
 	if err != nil {
 		fmt.Println(err.Error())
 	}

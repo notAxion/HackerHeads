@@ -36,6 +36,7 @@ func Start() {
 	goBot.AddHandler(manageChannels)
 
 	goBot.AddHandler(features.EventRoleAdd)
+	goBot.AddHandler(features.EventRoleRemove)
 
 	//goBot.AddHandler(maxmsgCount)
 	//st = *dg.State

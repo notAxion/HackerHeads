@@ -12,39 +12,29 @@ import (
 
 var eventMap map[string]string = make(map[string]string) //stores the eventRoleID for each channel (map[ChannelID]eventRoleID) go to EventStop for more info # thanks to chanbakjsd from gophers
 
-// 											***		E V E N T 	***
+// 													***		E V E N T 	***
+// #todo remove the role if the message is deleted
 
-// EventStop
-func EventStop(s *dg.Session, m *dg.MessageCreate) {
+// EventStart will start an instance of an event for that channel
+// So afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent
+// and removes the role when a message is deleted within the event period 
+func EventStart(s *dg.Session, m *dg.MessageCreate) {   //# todo check the role hierarchy to check if person that is sending the command does himself has the perms to add that role someone else
 	if m.Content[1:] == "event" || m.Content[1:] == "event " {
 		//helpEvent(s, m.ChannelID)
 		return
 	}
-	args := fieldsN(m.Content, 2)
+	args := fieldsN(m.Content[1:], 3)
 	if len(args) == 0 {
-		//helpEvent(s, m.ChannelID)
-	}
-	if args[1] == "stop" {
-		eventMap[m.ChannelID] = ""
-		s.ChannelMessageSend(m.ChannelID, "event is stopped")
-	} else if args[1][:5] == "start" {
-		EventStart(s, m)
-		return
-	} else {
 		//helpEvent(s, m.ChannelID)
 		return
 	}
-
-}
-func EventStart(s *dg.Session, m *dg.MessageCreate) {
-	args := fieldsN(m.Content, 3)
-	if len(args) == 0 {
+	if args[1] != "start" {
 		//helpEvent(s, m.ChannelID)
 		return
 	}
 	eventRoleID, valid := validRoleID(s, m, args[2])
 	if !valid {
-		//helpEvent(s,m.ChannelID)
+		//# embed = "Either that role doesn't exist or I don't have perms to add that role to anyone"
 		s.ChannelMessageSend(m.ChannelID, "something wrong with the role tag")
 		return
 	}
@@ -52,12 +42,25 @@ func EventStart(s *dg.Session, m *dg.MessageCreate) {
 	s.ChannelMessageSend(m.ChannelID, "event is started")
 
 }
+// EventRoleAdd will be adding roles to the users after the event is started also this will handle the event stop command
 func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 	//if m.Content == ".event stop" {
 	// do the stoping here
 	//}
 	if eventMap[m.ChannelID] == "" {
 		return
+	}
+	
+	//This if part will check for the event stop command and will stop the event
+	if str.HasPrefix(m.Content, config.BotPrefix) {
+		args:= fieldsN(m.Content[1:], 2)
+		if len(args) == 0 {
+			return
+		}
+		if  args[0] == "event" && args[1] == "stop" {
+			eventMap[m.ChannelID] = ""
+			return
+		}
 	}
 	eventRoleID := eventMap[m.ChannelID]
 	err := s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, eventRoleID)
@@ -97,7 +100,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 		return
 	}
 	//  Getting the args
-	args := fieldsN(m.Content, 3)
+	args := fieldsN(m.Content[1:], 3)
 	if len(args) == 0 {
 		helpMute(s, m.ChannelID) //!valid
 		return
@@ -203,7 +206,7 @@ func Remind(s *dg.Session, m *dg.MessageCreate) {
 		helpRemind(s, m.ChannelID)
 		return
 	}
-	rem := fieldsN(m.Content, 3)
+	rem := fieldsN(m.Content[1:], 3)
 	if len(rem) == 0 {
 		helpRemind(s, m.ChannelID)
 		return
@@ -278,7 +281,7 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 		return
 	}
 	//  Getting the args
-	args := fieldsN(m.Content, 3)
+	args := fieldsN(m.Content[1:], 3)
 	if len(args) == 0 {
 		helpWarn(s, m.ChannelID)
 	}
@@ -481,6 +484,7 @@ func validRoleID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
 // fieldN is just a upgraded version of strings.Fields the extra thing that it does is,
 // it returns slice of first 'N' substrings of the passed input
 // it is similer like Split and SplitN but without any white spaces in any slice like Fields
+// #For error checking: if the len of the returned slice is 0 then an error has occured
 func fieldsN(s string, n int) []string {
 	if len(s) == 0 || n < 1 {
 		return []string{}

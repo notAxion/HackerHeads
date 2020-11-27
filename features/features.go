@@ -10,13 +10,14 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-//#todo add a variable aka var = config.BotPrefix and replace every config.BotPrefix with that var
+var botPrefix string = config.BotPrefix
+
+//#todo add a variable aka var = botPrefix and replace every botPrefix with that var
 //#and also change every help funcs and use different variables for the desc.
 
 var eventMap map[string]string = make(map[string]string) //stores the eventRoleID for each channel (map[ChannelID]eventRoleID) go to EventStop for more info # thanks to chanbakjsd from gophers
 
 // 													***		E V E N T 	***
-// #todo remove the role if the message is deleted
 
 // EventStart will start an instance of an event for that channel
 // So afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent
@@ -64,7 +65,7 @@ func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 	}
 
 	//This if part will check for the event stop command and will stop the event
-	if str.HasPrefix(m.Content, config.BotPrefix) {
+	if str.HasPrefix(m.Content, botPrefix) {
 		args := fieldsN(m.Content[1:], 2)
 		if len(args) == 0 {
 			return
@@ -90,13 +91,12 @@ func EventRoleRemove(s *dg.Session, m *dg.MessageDelete) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-
 }
 
 // 											***		helpEvent		***
 
 func helpEvent(s *dg.Session, chnID string) {
-	desc := fmt.Sprintf("\n**Description**:  EventStart will start an instance of an event for that channel \nSo afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent \nand removes the role when a message is deleted within the event period.\n*It is advisable to create a new channel and then start the event and dont reuse it for other events* \n**Usage**: %sevent < [start] || [stop] > {@role}  \n**Example**:\n\t%sevent start @participant \n\t%sevent stop", config.BotPrefix, config.BotPrefix, config.BotPrefix)
+	desc := fmt.Sprintf("\n**Description**:  EventStart will start an instance of an event for that channel \nSo afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent \nand removes the role when a message is deleted within the event period.\n*It is advisable to create a new channel and then start the event and dont reuse it for other events* \n**Usage**: %sevent < [start] || [stop] > {@role}  \n**Example**:\n\t%sevent start @participant \n\t%sevent stop", botPrefix, botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       fmt.Sprintf("\n**Command**: event"),
@@ -210,7 +210,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 //												*** 	helpMute	***
 
 func helpMute(s *dg.Session, chnID string) {
-	desc := fmt.Sprintf("\n**Description**: muting a member from a server will revoke them from chatting or talking from a Channel, however then can see the message history and will be able to connect in the channels by default.\n**Usage**: %smute [@user] <limit> [reason]  \n**Example**:\n\t%smute @raider 3d be happy with muted", config.BotPrefix, config.BotPrefix)
+	desc := fmt.Sprintf("\n**Description**: muting a member from a server will revoke them from chatting or talking from a Channel, however then can see the message history and will be able to connect in the channels by default.\n**Usage**: %smute [@user] <limit> [reason]  \n**Example**:\n\t%smute @raider 3d be happy with muted", botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       fmt.Sprintf("\n**Command**: mute"),
@@ -289,7 +289,7 @@ func Remind(s *dg.Session, m *dg.MessageCreate) {
 
 func helpRemind(s *dg.Session, chnID string) {
 
-	desc := fmt.Sprintf("\n**Description**: Will tag you at the channel you have sent the message so that it can remind you.\n**Usage**: %sremind [time] [Reminder] \n**Example**:\n\t%sremind 10m turn off microwave\n\t%sremind 1h start a pole", config.BotPrefix, config.BotPrefix, config.BotPrefix)
+	desc := fmt.Sprintf("\n**Description**: Will tag you at the channel you have sent the message so that it can remind you.\n**Usage**: %sremind [time] [Reminder] \n**Example**:\n\t%sremind 10m turn off microwave\n\t%sremind 1h start a pole", botPrefix, botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       fmt.Sprintf("\n**Command**: remind"),
@@ -369,7 +369,7 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 //												*** 	helpWarn	***
 
 func helpWarn(s *dg.Session, chnID string) {
-	desc := fmt.Sprintf("\n**Description**: warn those noobs who don't follow the rules.\n**Usage**: %swarn [@user] [reason]  \n**Example**:\n\t%swarn @noobSpammer stop the spam please", config.BotPrefix, config.BotPrefix)
+	desc := fmt.Sprintf("\n**Description**: warn those noobs who don't follow the rules.\n**Usage**: %swarn [@user] [reason]  \n**Example**:\n\t%swarn @noobSpammer stop the spam please", botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       fmt.Sprintf("\n**Command**: warn"),

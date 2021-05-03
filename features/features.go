@@ -100,7 +100,17 @@ func EventRoleRemove(s *dg.Session, m *dg.MessageDelete) {
 // 											***		helpEvent		***
 
 func helpEvent(s *dg.Session, chnID string) {
-	desc := fmt.Sprintf("\n**Description**:  EventStart will start an instance of an event for that channel \nSo afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent \nand removes the role when a message is deleted within the event period.\n*It is advisable to create a new channel and then start the event and dont reuse it for other events* \n**Usage**: %sevent < [start] || [stop] > {@role}  \n**Example**:\n\t%sevent start @participant \n\t%sevent stop", botPrefix, botPrefix, botPrefix)
+	desc := fmt.Sprintf(`
+**Description**:  EventStart will start an instance of an event for that channel
+So afterwards if any member of that event types any message
+`+` it will give that member a role which should be specified when event start command was sent
+and removes the role when a message is deleted within the event period.
+*It is advisable to create a new channel and then start the event and dont reuse it for other events* 
+**Usage**: %sevent < [start] || [stop] > {@role}
+**Example**:
+%sevent start @participant 
+%sevent stop
+	`, botPrefix, botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       "\n**Command**: event",
@@ -214,7 +224,13 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 //												*** 	helpMute	***
 
 func helpMute(s *dg.Session, chnID string) {
-	desc := fmt.Sprintf("\n**Description**: muting a member from a server will revoke them from chatting or talking from a Channel, however then can see the message history and will be able to connect in the channels by default.\n**Usage**: %smute [@user] <limit> [reason]  \n**Example**:\n\t%smute @raider 3d be happy with muted", botPrefix, botPrefix)
+	desc := fmt.Sprintf(`
+**Description**: muting a member from a server will revoke them from chatting or talking from a Channel
+however then can see the message history and will be able to connect in the channels by default.
+**Usage**: %smute [@user] <limit> [reason]  
+**Example**:
+%smute @raider 3d be happy with muted
+	`, botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       "\n**Command**: mute",
@@ -293,7 +309,13 @@ func Remind(s *dg.Session, m *dg.MessageCreate) {
 
 func helpRemind(s *dg.Session, chnID string) {
 
-	desc := fmt.Sprintf("\n**Description**: Will tag you at the channel you have sent the message so that it can remind you.\n**Usage**: %sremind [time] [Reminder] \n**Example**:\n\t%sremind 10m turn off microwave\n\t%sremind 1h start a pole", botPrefix, botPrefix, botPrefix)
+	desc := fmt.Sprintf(`
+**Description**: Will tag you at the channel you have sent the message so that it can remind you.
+**Usage**: %sremind [time] [Reminder] 
+**Example**:
+%sremind 10m turn off microwave
+%sremind 1h start a pole
+	`, botPrefix, botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       "\n**Command**: remind",

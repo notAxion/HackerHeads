@@ -509,7 +509,6 @@ func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool
 	if chn.GuildID != m.GuildID {
 		return "", false
 	}
-
 	if err == nil {
 		return id, true
 	}

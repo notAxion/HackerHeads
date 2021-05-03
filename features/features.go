@@ -10,6 +10,8 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
+// feature : .dc @mention to disconnect someone @me diconnect the user
+
 var botPrefix string = config.BotPrefix
 
 // #todo add a variable aka var = botPrefix and replace every botPrefix with that var
@@ -101,7 +103,7 @@ func helpEvent(s *dg.Session, chnID string) {
 	desc := fmt.Sprintf("\n**Description**:  EventStart will start an instance of an event for that channel \nSo afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent \nand removes the role when a message is deleted within the event period.\n*It is advisable to create a new channel and then start the event and dont reuse it for other events* \n**Usage**: %sevent < [start] || [stop] > {@role}  \n**Example**:\n\t%sevent start @participant \n\t%sevent stop", botPrefix, botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
-		Title:       fmt.Sprintf("\n**Command**: event"),
+		Title:       "\n**Command**: event",
 		Description: desc,
 		Color:       0x00fa00,
 	}
@@ -169,9 +171,9 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	}
 	guild, _ := s.Guild(m.GuildID) // ** todo try some other way to get the guild name cause i have to get all values just to get the guild name
 	limitArgs := fieldsN(args[2], 2)
-	if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
-		//goto noLimit
-	}
+	// if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
+	//goto noLimit
+	// }
 	limit, errLimit := t.ParseDuration(limitArgs[0])
 	err = s.GuildMemberRoleAdd(m.GuildID, user.ID, muteRoleID)
 	if err != nil {
@@ -180,7 +182,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	}
 	muteEmbed := &dg.MessageEmbed{
 		Type:  "rich",
-		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been muted. ‎*", user.Username, user.Discriminator),
+		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been muted. \u200e*", user.Username, user.Discriminator),
 		Color: 0x00fa00,
 	}
 	// Sending the embed text
@@ -215,7 +217,7 @@ func helpMute(s *dg.Session, chnID string) {
 	desc := fmt.Sprintf("\n**Description**: muting a member from a server will revoke them from chatting or talking from a Channel, however then can see the message history and will be able to connect in the channels by default.\n**Usage**: %smute [@user] <limit> [reason]  \n**Example**:\n\t%smute @raider 3d be happy with muted", botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
-		Title:       fmt.Sprintf("\n**Command**: mute"),
+		Title:       "\n**Command**: mute",
 		Description: desc,
 		Color:       0x00ff00,
 	}
@@ -294,7 +296,7 @@ func helpRemind(s *dg.Session, chnID string) {
 	desc := fmt.Sprintf("\n**Description**: Will tag you at the channel you have sent the message so that it can remind you.\n**Usage**: %sremind [time] [Reminder] \n**Example**:\n\t%sremind 10m turn off microwave\n\t%sremind 1h start a pole", botPrefix, botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
-		Title:       fmt.Sprintf("\n**Command**: remind"),
+		Title:       "\n**Command**: remind",
 		Description: desc,
 		Color:       0x00ff00,
 	}
@@ -348,16 +350,20 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 	}
 	warnEmbed := &dg.MessageEmbed{
 		Type:  "rich",
-		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been warned. ‎*", user.Username, user.Discriminator),
+		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been warned. \u200e*", user.Username, user.Discriminator),
 		Color: 0x00fa00,
 	}
 
 	//  Creates dm channel for the the warned user
 	warnDMChn, err := s.UserChannelCreate(warnID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	guild, _ := s.Guild(m.GuildID) // ** todo try some other way to get the guild name cause i have to get all values just to get the guild name
 	_, err = s.ChannelMessageSend(warnDMChn.ID, fmt.Sprintf("You were warned in %s for %s", guild.Name, args[2]))
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 		return
 	}
 
@@ -374,7 +380,7 @@ func helpWarn(s *dg.Session, chnID string) {
 	desc := fmt.Sprintf("\n**Description**: warn those noobs who don't follow the rules.\n**Usage**: %swarn [@user] [reason]  \n**Example**:\n\t%swarn @noobSpammer stop the spam please", botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
-		Title:       fmt.Sprintf("\n**Command**: warn"),
+		Title:       "\n**Command**: warn",
 		Description: desc,
 		Color:       0x00ff00,
 	}

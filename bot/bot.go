@@ -4,13 +4,12 @@ import (
 	"fmt"
 	str "strings"
 
-	"../config"
-	"../features"
 	dg "github.com/bwmarrin/discordgo"
+	"github.com/notAxion/HackerHeads/config"
+	"github.com/notAxion/HackerHeads/features"
 )
 
 var BotID string
-var goBot *dg.Session
 
 func Start() {
 	goBot, err := dg.New("Bot " + config.Token)
@@ -52,7 +51,7 @@ func Start() {
 
 func ready(s *dg.Session, event *dg.Ready) {
 	//set the playing status
-	s.UpdateStatus(0, "Bot in Development")
+	s.UpdateGameStatus(0, "Bot in Development")
 	s.StateEnabled = true
 	st := s.State
 	st.MaxMessageCount = 500
@@ -93,19 +92,14 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 		switch cmd {
 		case "event":
 			features.EventStart(s, m)
-			break
 		case "mute":
 			features.Mute(s, m)
-			break
 		case "ping":
 			features.Ping(s, m)
-			break
 		case "remind":
 			features.Remind(s, m)
-			break
 		case "warn":
 			features.Warn(s, m)
-			break
 		default:
 			s.ChannelMessageSend(m.ChannelID, "**WHAT !?** :thinking::thinking:")
 		}
@@ -113,17 +107,28 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 
 	if m.Content == "hi bot" || m.Content == "Hi bot" {
 		s.ChannelMessageSend(m.ChannelID, "```Hello Hackers```")
-	} /*
-		if m.ChannelID == "765909517879476224" {
-			fmt.Println(m.Content)
-		}*/
+	}
+
+	// if m.ChannelID == "765909517879476224" {
+	// fmt.Println(len(m.Attachments))
+	// }
 }
 
 func test(s *dg.Session, m *dg.MessageCreate) {
+	if m.Author.ID == BotID {
+		return
+	}
+	// if len(m.Content) < 4 {
+	// return
+	// }
 
 	if m.Content != "test" {
 		return
 	}
+	// args := [2]string{m.Content[5:23], m.Content[24:31]}
+	// fmt.Println(args[0], args[1])
+	// s.ChannelMessageSend(args[0], args[1])
+
 	// id , valid := features.ValidRoleID(s, m, m.Content[5:])
 	// if valid {
 	// 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@&%s> exists", id))
@@ -138,9 +143,10 @@ func manageChannels(s *dg.Session, chans *dg.ChannelCreate) {
 
 }
 
+/*
 func maxmsgCount(s *dg.Session, st *dg.State) {
 	st.MaxMessageCount = 500
-}
+} */
 
 /*
 func validID(s *dg.Session, m *dg.MessageCreate, id string ) bool  {

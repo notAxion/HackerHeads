@@ -5,17 +5,19 @@ import (
 	str "strings"
 	t "time"
 
-	"../config"
+	"github.com/notAxion/HackerHeads/config"
 
 	dg "github.com/bwmarrin/discordgo"
 )
 
 var botPrefix string = config.BotPrefix
 
-//#todo add a variable aka var = botPrefix and replace every botPrefix with that var
-//#and also change every help funcs and use different variables for the desc.
+// #todo add a variable aka var = botPrefix and replace every botPrefix with that var
+// #and also change every help funcs and use different variables for the desc.
 
-var eventMap map[string]string = make(map[string]string) //stores the eventRoleID for each channel (map[ChannelID]eventRoleID) go to EventStop for more info # thanks to chanbakjsd from gophers
+// stores the eventRoleID for each channel (map[ChannelID]eventRoleID)
+// go to EventStop for more info # thanks to chanbakjsd from gophers
+var eventMap map[string]string = make(map[string]string)
 
 // 													***		E V E N T 	***
 
@@ -394,7 +396,7 @@ func createMuteRole(s *dg.Session, m *dg.MessageCreate) error {
 		return err
 	}
 
-	perm := 0x400 | 0x10000 | 0x100000                                                           //(for  muted role)
+	var perm int64 = 0x400 | 0x10000 | 0x100000                                                  //(for  muted role)
 	_, err = s.GuildRoleEdit(m.GuildID, muteRole.ID, "test1Muted", 0x6b6b6b, false, perm, false) // bools are hoist and
 	if err != nil {
 		return err
@@ -412,7 +414,7 @@ func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate) error {
 	}
 	textPerm := &dg.PermissionOverwrite{
 		ID:   muteRoleID,
-		Type: "role",
+		Type: dg.PermissionOverwriteTypeRole,
 		Deny: 0x800 | 0x40,
 	}
 	textEdit := &dg.ChannelEdit{
@@ -420,7 +422,7 @@ func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate) error {
 	}
 	voicePerm := &dg.PermissionOverwrite{
 		ID:   muteRoleID,
-		Type: "role",
+		Type: dg.PermissionOverwriteTypeRole,
 		Deny: 0x200000,
 	}
 	voiceEdit := &dg.ChannelEdit{
@@ -449,7 +451,7 @@ func AddMuteRole(s *dg.Session, chans *dg.ChannelCreate) { // ** todo move this 
 	muteRoleID := "772777995025907732"
 	textPerm := &dg.PermissionOverwrite{
 		ID:   muteRoleID,
-		Type: "role",
+		Type: dg.PermissionOverwriteTypeRole,
 		Deny: 0x800 | 0x40,
 	}
 	textEdit := &dg.ChannelEdit{
@@ -457,7 +459,7 @@ func AddMuteRole(s *dg.Session, chans *dg.ChannelCreate) { // ** todo move this 
 	}
 	voicePerm := &dg.PermissionOverwrite{
 		ID:   muteRoleID,
-		Type: "role",
+		Type: dg.PermissionOverwriteTypeRole,
 		Deny: 0x200000,
 	}
 	voiceEdit := &dg.ChannelEdit{

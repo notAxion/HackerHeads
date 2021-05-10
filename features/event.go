@@ -26,7 +26,8 @@ func EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check the role hi
 		helpEvent(s, m.ChannelID)
 		return
 	}
-	eventRoleID, valid := validRoleID(s, m, args[2])
+	eventRoleID := args[2]
+	valid := validRoleID(s, m, eventRoleID)
 	if !valid {
 		roleinvalidEmbed := &dg.MessageEmbed{
 			Type:        "rich",

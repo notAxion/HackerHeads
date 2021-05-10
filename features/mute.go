@@ -1,10 +1,12 @@
 package features
 
 import (
+	"database/sql"
 	"fmt"
-	t "time"
+	"time"
 
 	dg "github.com/bwmarrin/discordgo"
+	"github.com/notAxion/HackerHeads/db"
 )
 
 //											***		M U T E		***
@@ -69,7 +71,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	// if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
 	//goto noLimit
 	// }
-	limit, errLimit := t.ParseDuration(limitArgs[0])
+	limit, errLimit := time.ParseDuration(limitArgs[0])
 	err = s.GuildMemberRoleAdd(m.GuildID, user.ID, muteRoleID)
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("sorry i cant update the role  of %s#%s", user.Username, user.Discriminator))
@@ -96,7 +98,7 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 		if dmOpen {
 			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
 		}
-		t.Sleep(limit)
+		time.Sleep(limit)
 		s.GuildMemberRoleRemove(m.GuildID, user.ID, muteRoleID) // change this with unmute func
 
 	} else { // no mute duration
@@ -133,28 +135,57 @@ however then can see the message history and will be able to connect in the chan
 
 //												***		createMuteRole		***
 
-func createMuteRole(s *dg.Session, m *dg.MessageCreate) error {
-	muteRole, err := s.GuildRoleCreate(m.GuildID)
+func createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.Role, err error) {
+	muteRole, err = s.GuildRoleCreate(m.GuildID)
 	if err != nil {
-		return err
+		return
 	}
 
 	//(for  muted role)
 	var perm int64 = 0x400 | 0x10000 | 0x100000
 
 	_, err = s.GuildRoleEdit(
-		m.GuildID, muteRole.ID, "test1Muted",
+		m.GuildID, muteRole.ID, "Muted",
 		0x6b6b6b, false, perm, false) // bools are hoist and
 	if err != nil {
-		return err
+		return
 	}
-	return nil
+	return muteRole, nil
 }
 
-// revokeChannelPerms will go on each channels of the guild when a mute command is called called for the first time in a guild
-func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate) error {
-	muteRoleID := "772777995025907732"
+//												***		muteRole		***
 
+// muteRole
+func muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
+	gID := m.GuildID
+	roleID, err := db.PQ.MuteRoleID(gID)
+	if err != sql.ErrNoRows && err != nil {
+		fmt.Println("features.muteRole error")
+		return "", err
+	}
+	valid := validRoleID(s, m, roleID)
+
+	if err == sql.ErrNoRows || !valid { // err = new guild, !valid = something wrong with role
+		role, err := createMuteRole(s, m)
+		if err != nil {
+			fmt.Println("create role error")
+			return "", err
+		}
+		err = revokeChannelPerms(s, m, role.ID) // maybe use goroutine
+		if err != nil {
+			fmt.Println("revoke Channel perms error")
+			return "", err
+		}
+		// db.UpdateMuteRole() || db.InsertMuteRole() use {{upsert insert on conflict }}
+	}
+	return roleID, nil
+
+}
+
+//												***		revokeChannelPerms		***
+
+// revokeChannelPerms will go on each channels of the guild when a mute command is called called for the first time in a guild
+func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate, muteRoleID string) error {
 	chans, err := s.GuildChannels(m.GuildID)
 	if err != nil {
 		return err

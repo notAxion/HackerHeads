@@ -13,10 +13,10 @@ import (
 // feature : .dc @mention to disconnect someone @me diconnect the user
 // how about a website which would control the bot 🤔
 
-var botPrefix string = config.BotPrefix
+// *todo add a variable aka var = botPrefix and replace every botPrefix with that var
+// *and also change every help funcs and use different variables for the desc.
 
-// #todo add a variable aka var = botPrefix and replace every botPrefix with that var
-// #and also change every help funcs and use different variables for the desc.
+var botPrefix string = config.BotPrefix
 
 // stores the eventRoleID for each channel (map[ChannelID]eventRoleID)
 // go to EventStop for more info # thanks to chanbakjsd from gophers
@@ -69,15 +69,15 @@ func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool
 
 // 												***		validRoleID		***
 
-func validRoleID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
+func validRoleID(s *dg.Session, m *dg.MessageCreate, id string) bool {
 
 	id = str.Trim(id, "<>&!@#")
 	err := s.GuildMemberRoleAdd(m.GuildID, s.State.User.ID, id)
 	s.GuildMemberRoleRemove(m.GuildID, s.State.User.ID, id)
 	if err == nil {
-		return id, true
+		return true
 	}
-	return "", false
+	return false
 }
 
 //												***		fieldsN		***

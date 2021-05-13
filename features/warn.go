@@ -20,7 +20,7 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 	if len(args) == 0 {
 		helpWarn(s, m.ChannelID)
 	}
-	warnID, valid := validUserID(s, m, args[1])
+	user, valid := validUserID(s, m, args[1])
 	if !valid { // provided id is not valid
 		idError := &dg.MessageEmbed{
 			Type:  "rich",
@@ -33,11 +33,7 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 		}
 		return
 	}
-	user, err := s.User(warnID)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+
 	warnEmbed := &dg.MessageEmbed{
 		Type:  "rich",
 		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been warned. \u200e*", user.Username, user.Discriminator),
@@ -45,7 +41,7 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 	}
 
 	//  Creates dm channel for the the warned user
-	warnDMChn, err := s.UserChannelCreate(warnID)
+	warnDMChn, err := s.UserChannelCreate(user.ID)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -31,6 +31,7 @@ func Start() {
 	goBot.AddHandler(ready)
 
 	goBot.AddHandler(test)
+	// goBot.AddHandler(invite)
 
 	goBot.AddHandler(manageChannels)
 
@@ -106,13 +107,18 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 	}
 
 	if m.Content == "hi bot" || m.Content == "Hi bot" {
-		s.ChannelMessageSend(m.ChannelID, "```Hello Hackers```")
+		s.ChannelMessageSendReply(m.ChannelID, "```Hey```", m.MessageReference)
 	}
 
 	// if m.ChannelID == "765909517879476224" {
 	// fmt.Println(len(m.Attachments))
 	// }
 }
+
+// func invite(s *dg.Session, inv *dg.Invite) {
+// 	fmt.Println(inv.Inviter.Username)
+// 	s.ChannelMessageSend("765909517879476224", "invite created")
+// }
 
 func test(s *dg.Session, m *dg.MessageCreate) {
 	if m.Author.ID == BotID {
@@ -122,9 +128,29 @@ func test(s *dg.Session, m *dg.MessageCreate) {
 	// return
 	// }
 
-	if m.Content != "test" {
+	// if len(m.Content) > 3 && m.Content[:4] != "test" {
+	if len(m.Content) > 3 && m.Content != "test" {
 		return
 	}
+	inv, err := s.GuildInvites(m.GuildID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, iv := range inv {
+		code := iv.Code
+		tempInv, err := s.Invite(code)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Printf("%#v", tempInv)
+	}
+
+	// if features.ValidRoleID(s, m, m.Content[5:]) {
+	// s.ChannelMessageSend(m.ChannelID, "exists")
+	// } else {
+	// s.ChannelMessageSend(m.ChannelID, "nope")
+	// }
 	// args := [2]string{m.Content[5:23], m.Content[24:31]}
 	// fmt.Println(args[0], args[1])
 	// s.ChannelMessageSend(args[0], args[1])

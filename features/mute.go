@@ -15,86 +15,60 @@ import (
 // or chat in any channel however they an join the VC
 // and will be able to see the message history by default
 func Mute(s *dg.Session, m *dg.MessageCreate) {
-	muteRoleID := "772777995025907732"
-	var dmOpen bool
-
-	//if !(already created) :
-	/*
-		err := createMuteRole(s, m)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	*/
-	/*
-		err := revokeChannelPerms(s, m)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		s.ChannelMessageSend(m.ChannelID, "Done")
-	*/
-
-	// Help mute
-	if m.Content[1:] == "mute" || m.Content[1:] == "mute " {
-		helpMute(s, m.ChannelID)
-		return
-	}
 	//  Getting the args
 	args := fieldsN(m.Content[1:], 3)
 	if len(args) == 0 {
-		helpMute(s, m.ChannelID) //!valid
+
+		helpMute(s, m.ChannelID) //!valid or just checking help mute
 		return
 	}
-
-	muteID, valid := validUserID(s, m, args[1])
+	user, valid := validUserID(s, m, args[1])
 	if !valid {
 		idError := &dg.MessageEmbed{
 			Type:  "rich",
 			Title: fmt.Sprintf(":x: **I can't find that user, %s**", args[1]),
 			Color: 0xff0000,
 		}
-		_, err := s.ChannelMessageSendEmbed(m.ChannelID, idError)
-		if err != nil {
-			fmt.Println(err.Error())
+		if _, err := s.ChannelMessageSendEmbed(m.ChannelID, idError); err != nil {
+			fmt.Println(err)
 		}
 		return
 	}
-	user, err := s.User(muteID)
+
+	muteRoleID, err := muteRole(s, m) // <- check mute if it actually works and also maybe make this function better and also check the last limitArgs[1] its sus
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("mute role error ", err)
 		return
 	}
-	guild, _ := s.Guild(m.GuildID) // ** todo try some other way to get the guild name cause i have to get all values just to get the guild name
-	limitArgs := fieldsN(args[2], 2)
-	// if len(limitArgs) == 0 { // if the length is 0 then there was just the reason there was reason entered no time limit
-	//goto noLimit
-	// }
-	limit, errLimit := time.ParseDuration(limitArgs[0])
 	err = s.GuildMemberRoleAdd(m.GuildID, user.ID, muteRoleID)
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("sorry i cant update the role  of %s#%s", user.Username, user.Discriminator))
+		msg := fmt.Sprintf("sorry i cant update the role of %s#%s", user.Username, user.Discriminator)
+		s.ChannelMessageSend(m.ChannelID, msg)
 		return
 	}
+
+	// sending final message of success to the channel
 	muteEmbed := &dg.MessageEmbed{
 		Type:  "rich",
 		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been muted. \u200e*", user.Username, user.Discriminator),
 		Color: 0x00fa00,
 	}
-	// Sending the embed text
 	_, err = s.ChannelMessageSendEmbed(m.ChannelID, muteEmbed)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	//  Creates dm channel for the the muted user
+	var dmOpen bool
 	muteDMChan, err := s.UserChannelCreate(user.ID)
 	if err == nil {
 		dmOpen = true
 	}
 
-	if errLimit == nil { // mute duration
+	guild, _ := s.Guild(m.GuildID)
+	limitArgs := fieldsN(args[2], 2)
+	// sending final message of success to user dm if open
+	limit, err := time.ParseDuration(limitArgs[0]) // bad code
+	if err == nil {                                // with mute duration
 		if dmOpen {
 			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
 		}
@@ -158,7 +132,7 @@ func createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.Role, err 
 // muteRole
 func muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
 	gID := m.GuildID
-	roleID, err := db.PQ.MuteRoleID(gID)
+	roleID, err := db.MuteRoleID(gID)
 	if err != sql.ErrNoRows && err != nil {
 		fmt.Println("features.muteRole error")
 		return "", err
@@ -166,17 +140,21 @@ func muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
 	valid := validRoleID(s, m, roleID)
 
 	if err == sql.ErrNoRows || !valid { // err = new guild, !valid = something wrong with role
-		role, err := createMuteRole(s, m)
+		newRole, err := createMuteRole(s, m)
 		if err != nil {
 			fmt.Println("create role error")
 			return "", err
 		}
-		err = revokeChannelPerms(s, m, role.ID) // maybe use goroutine
-		if err != nil {
+
+		if err = db.UpsertRole(gID, newRole.ID); err != nil {
+			fmt.Println("Upsert in DB error")
+			return "", err
+		}
+
+		if err = revokeChannelPerms(s, m, newRole.ID); err != nil {
 			fmt.Println("revoke Channel perms error")
 			return "", err
 		}
-		// db.UpdateMuteRole() || db.InsertMuteRole() use {{upsert insert on conflict }}
 	}
 	return roleID, nil
 

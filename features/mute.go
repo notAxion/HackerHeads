@@ -3,6 +3,7 @@ package features
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	dg "github.com/bwmarrin/discordgo"
@@ -16,33 +17,76 @@ import (
 // and will be able to see the message history by default
 func Mute(s *dg.Session, m *dg.MessageCreate) {
 	//  Getting the args
-	args := fieldsN(m.Content[1:], 3)
-	if len(args) == 0 {
-
+	args := fieldsN(m.Content[1:], -1)
+	if len(args) < 2 {
 		helpMute(s, m.ChannelID) //!valid or just checking help mute
 		return
 	}
 	user, valid := validUserID(s, m, args[1])
 	if !valid {
-		idError := &dg.MessageEmbed{
-			Type:  "rich",
-			Title: fmt.Sprintf(":x: **I can't find that user, %s**", args[1]),
-			Color: 0xff0000,
-		}
-		if _, err := s.ChannelMessageSendEmbed(m.ChannelID, idError); err != nil {
-			fmt.Println(err)
-		}
+		helpMute(s, m.ChannelID)
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("```I can't find that user, %s```", args[1]))
+		return
+	}
+	switch len(args) {
+	case 1:
+		helpMute(s, m.ChannelID)
+	case 2:
+		muteComplex(s, m, user, -1, "")
+	case 3:
+		mute3Arg(s, m, user, args)
+	case 4:
+		muteAllArgs(s, m, user, args)
+	}
+
+}
+
+func mute3Arg(s *dg.Session, m *dg.MessageCreate, user *dg.User, args []string) {
+	if len(args) != 3 {
 		return
 	}
 
-	muteRoleID, err := muteRole(s, m) // <- check mute if it actually works and also maybe make this function better and also check the last limitArgs[1] its sus
+	muteDur, err := time.ParseDuration(args[2])
+	if err != nil {
+		muteComplex(s, m, user, -1, args[2])
+		return
+	}
+	muteComplex(s, m, user, muteDur, "")
+}
+
+func muteAllArgs(s *dg.Session, m *dg.MessageCreate, user *dg.User, args []string) {
+	if len(args) < 4 {
+		return
+	}
+
+	muteDur, err := time.ParseDuration(args[2])
+	if err == nil {
+		reason := strings.Join(args[3:], " ")
+		muteComplex(s, m, user, muteDur, reason)
+		return
+	}
+	lastIndx := len(args) - 1
+	muteDur, err = time.ParseDuration(args[lastIndx])
+	if err == nil {
+		reason := strings.Join(args[2:lastIndx], " ")
+		muteComplex(s, m, user, muteDur, reason)
+		return
+	}
+	// no mute duration
+	reason := strings.Join(args[2:], " ")
+	muteComplex(s, m, user, -1, reason)
+
+}
+
+func muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur time.Duration, reason string) {
+	// if dur < 0 { no duration}
+	muteRoleID, err := muteRole(s, m)
 	if err != nil {
 		fmt.Println("mute role error ", err)
 		return
 	}
-	err = s.GuildMemberRoleAdd(m.GuildID, user.ID, muteRoleID)
-	if err != nil {
-		msg := fmt.Sprintf("sorry i cant update the role of %s#%s", user.Username, user.Discriminator)
+	if err = s.GuildMemberRoleAdd(m.GuildID, user.ID, muteRoleID); err != nil {
+		msg := fmt.Sprintf("```sorry i cant update the role of %s#%s```", user.Username, user.Discriminator)
 		s.ChannelMessageSend(m.ChannelID, msg)
 		return
 	}
@@ -53,9 +97,8 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been muted. \u200e*", user.Username, user.Discriminator),
 		Color: 0x00fa00,
 	}
-	_, err = s.ChannelMessageSendEmbed(m.ChannelID, muteEmbed)
-	if err != nil {
-		fmt.Println(err.Error())
+	if _, err = s.ChannelMessageSendEmbed(m.ChannelID, muteEmbed); err != nil {
+		fmt.Println(err)
 	}
 
 	var dmOpen bool
@@ -65,19 +108,16 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 	}
 
 	guild, _ := s.Guild(m.GuildID)
-	limitArgs := fieldsN(args[2], 2)
-	// sending final message of success to user dm if open
-	limit, err := time.ParseDuration(limitArgs[0]) // bad code
-	if err == nil {                                // with mute duration
+	if dur > 0 { // with mute duration
 		if dmOpen {
-			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
+			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason))
 		}
-		time.Sleep(limit)
-		s.GuildMemberRoleRemove(m.GuildID, user.ID, muteRoleID) // change this with unmute func
+		time.Sleep(dur)
+		Unmute(s, m)
 
 	} else { // no mute duration
 		if dmOpen {
-			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, limitArgs[1]))
+			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason))
 		}
 	}
 }

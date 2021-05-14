@@ -101,6 +101,8 @@ func messageCreate(s *dg.Session, m *dg.MessageCreate) {
 			features.Remind(s, m)
 		case "warn":
 			features.Warn(s, m)
+		case "unmute":
+			features.Unmute(s, m)
 		default:
 			s.ChannelMessageSend(m.ChannelID, "**WHAT !?** :thinking::thinking:")
 		}
@@ -131,19 +133,6 @@ func test(s *dg.Session, m *dg.MessageCreate) {
 	// if len(m.Content) > 3 && m.Content[:4] != "test" {
 	if len(m.Content) > 3 && m.Content != "test" {
 		return
-	}
-	inv, err := s.GuildInvites(m.GuildID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	for _, iv := range inv {
-		code := iv.Code
-		tempInv, err := s.Invite(code)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Printf("%#v", tempInv)
 	}
 
 	// if features.ValidRoleID(s, m, m.Content[5:]) {

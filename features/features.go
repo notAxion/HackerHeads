@@ -25,6 +25,10 @@ var botPrefix string = config.BotPrefix
 // go to EventStop for more info # thanks to chanbakjsd from gophers
 var eventMap map[string]string = make(map[string]string)
 
+func init() {
+	SetAllMutedTimer()
+}
+
 //											***		P I N G 	***
 
 //Ping : checks the ping of the bot in millisecond

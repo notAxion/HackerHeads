@@ -15,6 +15,7 @@ func init() {
 
 	dbName = os.Getenv(constants.DBName)
 	tableMute = os.Getenv(constants.TableMute)
+	tableMuteTime = os.Getenv(constants.TableMuteTime)
 	dbUser = os.Getenv(constants.Username)
 	dbPass = os.Getenv(constants.Pass)
 	driverName = os.Getenv(constants.DriverName)
@@ -23,8 +24,8 @@ func init() {
 }
 
 var (
-	dbName, tableMute, dbUser, dbPass, driverName string
-	PQ                                            *DB
+	dbName, tableMute, tableMuteTime, dbUser, dbPass, driverName string
+	PQ                                                           *DB
 )
 
 type DB struct {

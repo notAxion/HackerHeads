@@ -28,14 +28,14 @@ func Mute(s *dg.Session, m *dg.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("```I can't find that user, %s```", args[1]))
 		return
 	}
-	switch len(args) {
-	case 1:
+	switch {
+	case len(args) == 1:
 		helpMute(s, m.ChannelID)
-	case 2:
+	case len(args) == 2:
 		muteComplex(s, m, user, -1, "")
-	case 3:
+	case len(args) == 3:
 		mute3Arg(s, m, user, args)
-	case 4:
+	case len(args) >= 4:
 		muteAllArgs(s, m, user, args)
 	}
 
@@ -112,7 +112,9 @@ func muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur time.Dur
 		if dmOpen {
 			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason))
 		}
-		time.Sleep(dur)
+		// tmp := time.Now().Add(dur)
+		// db.SaveUnmuteTime(guild.ID, user.ID, tmp)
+		// time.Sleep(dur) // use time.After and also check the timezone while selecting also do everything in utc time
 		Unmute(s, m)
 
 	} else { // no mute duration
@@ -202,7 +204,8 @@ func muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
 
 //												***		revokeChannelPerms		***
 
-// revokeChannelPerms will go on each channels of the guild when a mute command is called called for the first time in a guild
+// revokeChannelPerms will go on each channels of the guild
+// when a mute command is called called for the first time in a guild
 func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate, muteRoleID string) error {
 	chans, err := s.GuildChannels(m.GuildID)
 	if err != nil {

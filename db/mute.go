@@ -6,13 +6,9 @@ import (
 )
 
 func MuteRoleID(gID string) (string, error) {
-	return PQ.MuteRoleID(gID)
-}
-
-func (db *DB) MuteRoleID(gID string) (string, error) {
 	var roleID string
 
-	err := db.QueryRowx(`
+	err := PQ.QueryRowx(`
 		SELECT role_id from `+tableMute+` 
 		where guild_id =$1
 		;`, gID).Scan(&roleID)
@@ -28,15 +24,11 @@ func (db *DB) MuteRoleID(gID string) (string, error) {
 }
 
 func UpsertRole(gID, roleID string) error {
-	return PQ.UpsertRole(gID, roleID)
-}
-
-func (db *DB) UpsertRole(gID, roleID string) error {
-	res, err := db.Exec(`
+	_, err := PQ.Exec(`
 		INSERT INTO `+tableMute+` (guild_id, role_id)
 		VALUES
 			($1, $2)
-		ON CONFLICT (giuld_id)
+		ON CONFLICT (guild_id)
 		DO
 			UPDATE SET role_id = EXCLUDED.role_id
 		;`, gID, roleID)
@@ -44,7 +36,6 @@ func (db *DB) UpsertRole(gID, roleID string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%#v \n", res)
 
 	return nil
 }

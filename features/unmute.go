@@ -2,9 +2,16 @@ package features
 
 import (
 	"fmt"
+	"time"
 
 	dg "github.com/bwmarrin/discordgo"
+	"github.com/notAxion/HackerHeads/db"
 )
+
+type muteTime struct {
+	GID, UserID string
+	UnmuteTime  time.Time
+}
 
 // 												***		U N M U T E 	***
 
@@ -26,7 +33,7 @@ func Unmute(s *dg.Session, m *dg.MessageCreate) {
 		fmt.Println("unmute mute role error ", err)
 		return
 	}
-	if err = s.GuildMemberRoleRemove(m.GuildID, user.ID, muteRoleID); err != nil {
+	if err = removeRole(s, m.GuildID, user.ID, muteRoleID); err != nil {
 		helpMute(s, m.ChannelID)
 		msg := fmt.Sprintf("```can't remove role of %s#%s```", user.Username, user.Discriminator)
 		s.ChannelMessageSend(m.ChannelID, msg)
@@ -43,4 +50,22 @@ func Unmute(s *dg.Session, m *dg.MessageCreate) {
 		fmt.Println(err)
 	}
 
+}
+
+func removeRole(s *dg.Session, GuildID, userID, muteRoleID string) error {
+	return s.GuildMemberRoleRemove(GuildID, userID, muteRoleID)
+}
+
+// SetAllMutedTimer is only for init which will set the timer
+// of all muted user which were in the db
+func SetAllMutedTimer() {
+	users, err := db.GetMutedUsers()
+	if err != nil {
+		// don't know what to with it
+		fmt.Println(err)
+	}
+	for _, user := range users {
+		fmt.Println(user) // check this
+		// afterFunc will be here
+	}
 }

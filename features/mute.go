@@ -15,46 +15,46 @@ import (
 // Mute command that will mute the user so that they can't talk
 // or chat in any channel however they an join the VC
 // and will be able to see the message history by default
-func Mute(s *dg.Session, m *dg.MessageCreate) {
+func (r *Mux) Mute(s *dg.Session, m *dg.MessageCreate) {
 	//  Getting the args
 	args := fieldsN(m.Content[1:], -1)
 	if len(args) < 2 {
-		helpMute(s, m.ChannelID) //!valid or just checking help mute
+		r.helpMute(s, m.ChannelID) //!valid or just checking help mute
 		return
 	}
-	user, valid := validUserID(s, m, args[1])
+	user, valid := r.validUserID(s, m, args[1])
 	if !valid {
-		helpMute(s, m.ChannelID)
+		r.helpMute(s, m.ChannelID)
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("```I can't find that user, %s```", args[1]))
 		return
 	}
 	switch {
 	case len(args) == 1:
-		helpMute(s, m.ChannelID)
+		r.helpMute(s, m.ChannelID)
 	case len(args) == 2:
-		muteComplex(s, m, user, -1, "")
+		r.muteComplex(s, m, user, -1, "")
 	case len(args) == 3:
-		mute3Arg(s, m, user, args)
+		r.mute3Arg(s, m, user, args)
 	case len(args) >= 4:
-		muteAllArgs(s, m, user, args)
+		r.muteAllArgs(s, m, user, args)
 	}
 
 }
 
-func mute3Arg(s *dg.Session, m *dg.MessageCreate, user *dg.User, args []string) {
+func (r *Mux) mute3Arg(s *dg.Session, m *dg.MessageCreate, user *dg.User, args []string) {
 	if len(args) != 3 {
 		return
 	}
 
 	muteDur, err := time.ParseDuration(args[2])
 	if err != nil {
-		muteComplex(s, m, user, -1, args[2])
+		r.muteComplex(s, m, user, -1, args[2])
 		return
 	}
-	muteComplex(s, m, user, muteDur, "")
+	r.muteComplex(s, m, user, muteDur, "")
 }
 
-func muteAllArgs(s *dg.Session, m *dg.MessageCreate, user *dg.User, args []string) {
+func (r *Mux) muteAllArgs(s *dg.Session, m *dg.MessageCreate, user *dg.User, args []string) {
 	if len(args) < 4 {
 		return
 	}
@@ -62,25 +62,25 @@ func muteAllArgs(s *dg.Session, m *dg.MessageCreate, user *dg.User, args []strin
 	muteDur, err := time.ParseDuration(args[2])
 	if err == nil {
 		reason := strings.Join(args[3:], " ")
-		muteComplex(s, m, user, muteDur, reason)
+		r.muteComplex(s, m, user, muteDur, reason)
 		return
 	}
 	lastIndx := len(args) - 1
 	muteDur, err = time.ParseDuration(args[lastIndx])
 	if err == nil {
 		reason := strings.Join(args[2:lastIndx], " ")
-		muteComplex(s, m, user, muteDur, reason)
+		r.muteComplex(s, m, user, muteDur, reason)
 		return
 	}
 	// no mute duration
 	reason := strings.Join(args[2:], " ")
-	muteComplex(s, m, user, -1, reason)
+	r.muteComplex(s, m, user, -1, reason)
 
 }
 
-func muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur time.Duration, reason string) {
+func (r *Mux) muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur time.Duration, reason string) {
 	// if dur < 0 { no duration}
-	muteRoleID, err := muteRole(s, m)
+	muteRoleID, err := r.muteRole(s, m)
 	if err != nil {
 		fmt.Println("mute role error ", err)
 		return
@@ -115,7 +115,7 @@ func muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur time.Dur
 		// tmp := time.Now().Add(dur)
 		// db.SaveUnmuteTime(guild.ID, user.ID, tmp)
 		// time.Sleep(dur) // use time.After and also check the timezone while selecting also do everything in utc time
-		Unmute(s, m)
+		r.Unmute(s, m)
 
 	} else { // no mute duration
 		if dmOpen {
@@ -126,7 +126,7 @@ func muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur time.Dur
 
 //												*** 	helpMute	***
 
-func helpMute(s *dg.Session, chnID string) {
+func (r *Mux) helpMute(s *dg.Session, chnID string) {
 	desc := fmt.Sprintf(`
 **Description**: muting a member from a server will revoke them from chatting or talking from a Channel
 however then can see the message history and will be able to connect in the channels by default.
@@ -151,7 +151,7 @@ however then can see the message history and will be able to connect in the chan
 
 //												***		createMuteRole		***
 
-func createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.Role, err error) {
+func (r *Mux) createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.Role, err error) {
 	muteRole, err = s.GuildRoleCreate(m.GuildID)
 	if err != nil {
 		return
@@ -172,17 +172,17 @@ func createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.Role, err 
 //												***		muteRole		***
 
 // muteRole
-func muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
+func (r *Mux) muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
 	gID := m.GuildID
 	roleID, err := db.MuteRoleID(gID)
 	if err != sql.ErrNoRows && err != nil {
 		fmt.Println("features.muteRole error")
 		return "", err
 	}
-	valid := validRoleID(s, m, roleID)
+	valid := r.validRoleID(s, m, roleID)
 
 	if err == sql.ErrNoRows || !valid { // err = new guild, !valid = something wrong with role
-		newRole, err := createMuteRole(s, m)
+		newRole, err := r.createMuteRole(s, m)
 		if err != nil {
 			fmt.Println("create role error")
 			return "", err
@@ -193,7 +193,7 @@ func muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
 			return "", err
 		}
 
-		if err = revokeChannelPerms(s, m, newRole.ID); err != nil {
+		if err = r.revokeChannelPerms(s, m, newRole.ID); err != nil {
 			fmt.Println("revoke Channel perms error")
 			return "", err
 		}
@@ -206,7 +206,7 @@ func muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
 
 // revokeChannelPerms will go on each channels of the guild
 // when a mute command is called called for the first time in a guild
-func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate, muteRoleID string) error {
+func (r *Mux) revokeChannelPerms(s *dg.Session, m *dg.MessageCreate, muteRoleID string) error {
 	chans, err := s.GuildChannels(m.GuildID)
 	if err != nil {
 		return err
@@ -246,7 +246,7 @@ func revokeChannelPerms(s *dg.Session, m *dg.MessageCreate, muteRoleID string) e
 // 											***		AddMuteRole		***
 
 // AddMuteRole Will add the mute role to the channel called through bot.ManangeChannel
-func AddMuteRole(s *dg.Session, chans *dg.ChannelCreate) { // ** todo move this to another file
+func (r *Mux) AddMuteRole(s *dg.Session, chans *dg.ChannelCreate) { // ** todo move this to another file
 	muteRoleID := "772777995025907732"
 	textPerm := &dg.PermissionOverwrite{
 		ID:   muteRoleID,

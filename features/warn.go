@@ -9,18 +9,18 @@ import (
 //												***		W A R N		***
 
 // Warn command that will warn that user upon the specified reason and dm them if possible (todo add logging to a DB)
-func Warn(s *dg.Session, m *dg.MessageCreate) {
+func (r *Mux) Warn(s *dg.Session, m *dg.MessageCreate) {
 	// Help warn
 	if m.Content[1:] == "warn" || m.Content[1:] == "warn " {
-		helpWarn(s, m.ChannelID)
+		r.helpWarn(s, m.ChannelID)
 		return
 	}
 	//  Getting the args
 	args := fieldsN(m.Content[1:], 3)
 	if len(args) == 0 {
-		helpWarn(s, m.ChannelID)
+		r.helpWarn(s, m.ChannelID)
 	}
-	user, valid := validUserID(s, m, args[1])
+	user, valid := r.validUserID(s, m, args[1])
 	if !valid { // provided id is not valid
 		idError := &dg.MessageEmbed{
 			Type:  "rich",
@@ -62,7 +62,7 @@ func Warn(s *dg.Session, m *dg.MessageCreate) {
 
 //												*** 	helpWarn	***
 
-func helpWarn(s *dg.Session, chnID string) {
+func (r *Mux) helpWarn(s *dg.Session, chnID string) {
 	desc := fmt.Sprintf("\n**Description**: warn those noobs who don't follow the rules.\n**Usage**: %swarn [@user] [reason]  \n**Example**:\n\t%swarn @noobSpammer stop the spam please", botPrefix, botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",

@@ -32,9 +32,10 @@ type DB struct {
 	*sqlx.DB
 }
 
-// NewDB will connect to Postgres // *todo add a recover maybe
+// NewDB will connect to Postgres // *todo add a recover maybe && change sslmode
 func NewDB() *DB {
 	defer fmt.Println("Database Set.")
-	sourceName := "user=" + dbUser + " dbname=" + dbName + " password=" + dbPass + " sslmode=disable"
+	sourceName := fmt.Sprintf(`user %s dbname %s password %s sslmode=disable
+								`, dbUser, dbName, dbPass)
 	return &DB{sqlx.MustConnect(driverName, sourceName)}
 }

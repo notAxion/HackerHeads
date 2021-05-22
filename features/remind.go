@@ -10,14 +10,14 @@ import (
 // 											***		R E M I N D		***
 
 //Remind command will remind after a specified time and you should have to add some reminder description to get the reminder
-func Remind(s *dg.Session, m *dg.MessageCreate) {
+func (r *Mux) Remind(s *dg.Session, m *dg.MessageCreate) {
 	if m.Content[1:] == "remind" || m.Content[1:] == "remind " {
-		helpRemind(s, m.ChannelID)
+		r.helpRemind(s, m.ChannelID)
 		return
 	}
 	rem := fieldsN(m.Content[1:], 3)
 	if len(rem) == 0 {
-		helpRemind(s, m.ChannelID)
+		r.helpRemind(s, m.ChannelID)
 		return
 	}
 	timer, err := t.ParseDuration(rem[1])
@@ -55,7 +55,7 @@ func Remind(s *dg.Session, m *dg.MessageCreate) {
 
 //												***		helpRemind		***
 
-func helpRemind(s *dg.Session, chnID string) {
+func (r *Mux) helpRemind(s *dg.Session, chnID string) {
 
 	desc := fmt.Sprintf(`
 **Description**: Will tag you at the channel you have sent the message so that it can remind you.

@@ -13,28 +13,29 @@ type muteTime struct {
 	UnmuteTime  time.Time
 }
 
+// var muteDone map[string]chan struct{}
 // 												***		U N M U T E 	***
 
 //
-func Unmute(s *dg.Session, m *dg.MessageCreate) {
+func (r *Mux) Unmute(s *dg.Session, m *dg.MessageCreate) {
 	args := fieldsN(m.Content, -1)
 	if len(args) < 2 {
-		helpMute(s, m.ChannelID) //!valid or just checking help mute
+		r.helpMute(s, m.ChannelID) //!valid or just checking help mute
 		return
 	}
-	user, valid := validUserID(s, m, args[1])
+	user, valid := r.validUserID(s, m, args[1])
 	if !valid {
-		helpMute(s, m.ChannelID)
+		r.helpMute(s, m.ChannelID)
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("```I can't find that user, %s```", args[1]))
 		return
 	}
-	muteRoleID, err := muteRole(s, m)
+	muteRoleID, err := r.muteRole(s, m)
 	if err != nil {
 		fmt.Println("unmute mute role error ", err)
 		return
 	}
-	if err = removeRole(s, m.GuildID, user.ID, muteRoleID); err != nil {
-		helpMute(s, m.ChannelID)
+	if err = r.removeRole(s, m.GuildID, user.ID, muteRoleID); err != nil {
+		r.helpMute(s, m.ChannelID)
 		msg := fmt.Sprintf("```can't remove role of %s#%s```", user.Username, user.Discriminator)
 		s.ChannelMessageSend(m.ChannelID, msg)
 		return
@@ -52,20 +53,22 @@ func Unmute(s *dg.Session, m *dg.MessageCreate) {
 
 }
 
-func removeRole(s *dg.Session, GuildID, userID, muteRoleID string) error {
+func (r *Mux) removeRole(s *dg.Session, GuildID, userID, muteRoleID string) error {
 	return s.GuildMemberRoleRemove(GuildID, userID, muteRoleID)
 }
 
 // SetAllMutedTimer is only for init which will set the timer
 // of all muted user which were in the db
-func SetAllMutedTimer() {
-	users, err := db.GetMutedUsers()
+func (r *Mux) SetAllMutedTimer() {
+	users, err := db.TGetMutedUsers()
 	if err != nil {
 		// don't know what to with it
 		fmt.Println(err)
 	}
-	for _, user := range users {
+	for k, user := range users {
+		fmt.Println(k)
 		fmt.Println(user) // check this
 		// afterFunc will be here
+		// delete the key when unmute
 	}
 }

@@ -26,13 +26,35 @@ var botPrefix string = config.BotPrefix
 var eventMap map[string]string = make(map[string]string)
 
 func init() {
-	SetAllMutedTimer()
+	// SetAllMutedTimer()
+}
+
+type User struct {
+	GID int64
+	UID int64
+}
+
+type Mux struct {
+	botPrefix string
+	botID     string
+	eventMap  map[string]string
+	muteDone  map[User]chan struct{} // change it to a type of two 2 int64(s)
+}
+
+func NewRouter(bID string) *Mux {
+	r := &Mux{
+		botPrefix: config.BotPrefix,
+		botID:     bID,
+		eventMap:  make(map[string]string),
+		muteDone:  make(map[User]chan struct{}),
+	}
+	return r
 }
 
 //											***		P I N G 	***
 
 //Ping : checks the ping of the bot in millisecond
-func Ping(s *dg.Session, m *dg.MessageCreate) {
+func (r *Mux) Ping(s *dg.Session, m *dg.MessageCreate) {
 	// get current time, send message, subtract new current time with old, update said message to show that time
 	u := t.Now()
 	msg, _ := s.ChannelMessageSend(m.ChannelID, "pong -")
@@ -48,7 +70,7 @@ func Ping(s *dg.Session, m *dg.MessageCreate) {
 
 //												***		validUserID		***
 
-func validUserID(s *dg.Session, m *dg.MessageCreate, id string) (*dg.User, bool) {
+func (r *Mux) validUserID(s *dg.Session, m *dg.MessageCreate, id string) (*dg.User, bool) {
 
 	id = str.Trim(id, "<>&!@#")
 	mem, err := s.GuildMember(m.GuildID, id)
@@ -61,7 +83,7 @@ func validUserID(s *dg.Session, m *dg.MessageCreate, id string) (*dg.User, bool)
 
 // 												***		validChannelID		***
 
-func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
+func (r *Mux) validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool) {
 
 	id = str.Trim(id, "<>&!@#")
 	chn, err := s.Channel(id)
@@ -74,14 +96,14 @@ func validChannelID(s *dg.Session, m *dg.MessageCreate, id string) (string, bool
 	return "", false
 }
 
-func ValidRoleID(s *dg.Session, m *dg.MessageCreate, id string) bool {
-	return validRoleID(s, m, id)
+func (r *Mux) ValidRoleID(s *dg.Session, m *dg.MessageCreate, id string) bool {
+	return r.validRoleID(s, m, id)
 }
 
 // 												***		validRoleID		***
 
 // not good use simple loop roles
-func validRoleID(s *dg.Session, m *dg.MessageCreate, id string) bool {
+func (r *Mux) validRoleID(s *dg.Session, m *dg.MessageCreate, id string) bool {
 
 	id = str.Trim(id, "<>&!@#")
 	gRoles, err := s.GuildRoles(m.GuildID)

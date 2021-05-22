@@ -49,3 +49,30 @@ func GetMutedUsers() ([]muteTime, error) {
 	}
 	return users, nil
 }
+
+type XMap map[string]time.Time
+
+// take a XMap as a param
+func TGetMutedUsers() (XMap, error) {
+	users := make(XMap)
+	rows, err := PQ.Queryx(`
+	SELECT * FROM ` + tableMuteTime + `
+		;`)
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+	for rows.Next() {
+		usr := muteTime{}
+		rows.StructScan(&usr)
+		k := usr.GID + " " + usr.UserID
+		users[k] = usr.UnmuteTime
+	}
+	if err != nil {
+		fmt.Println("unmute rows scan error")
+		return nil, err
+	}
+	return users, err
+}

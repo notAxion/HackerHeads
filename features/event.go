@@ -12,22 +12,22 @@ import (
 // EventStart will start an instance of an event for that channel
 // So afterwards if any member of that event types any message it will give that member a role which should be specified when event start command was sent
 // and removes the role when a message is deleted within the event period
-func EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check the role hierarchy to check if person that is sending the command does himself has the perms to add that role someone else
+func (r *Mux) EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check the role hierarchy to check if person that is sending the command does himself has the perms to add that role someone else
 	if m.Content[1:] == "event" || m.Content[1:] == "event " {
-		helpEvent(s, m.ChannelID)
+		r.helpEvent(s, m.ChannelID)
 		return
 	}
 	args := fieldsN(m.Content[1:], 3)
 	if len(args) == 0 {
-		//helpEvent(s, m.ChannelID)
+		//r.helpEvent(s, m.ChannelID)
 		return
 	}
 	if args[1] != "start" {
-		helpEvent(s, m.ChannelID)
+		r.helpEvent(s, m.ChannelID)
 		return
 	}
 	eventRoleID := args[2]
-	valid := validRoleID(s, m, eventRoleID)
+	valid := r.validRoleID(s, m, eventRoleID)
 	if !valid {
 		roleinvalidEmbed := &dg.MessageEmbed{
 			Type:        "rich",
@@ -48,7 +48,7 @@ func EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check the role hi
 
 // EventRoleAdd will be adding roles to the users after the event is started
 // also this will handle the event stop command
-func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
+func (r *Mux) EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
@@ -74,7 +74,7 @@ func EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 		fmt.Println(err.Error())
 	}
 }
-func EventRoleRemove(s *dg.Session, m *dg.MessageDelete) {
+func (r *Mux) EventRoleRemove(s *dg.Session, m *dg.MessageDelete) {
 	if eventMap[m.BeforeDelete.ChannelID] == "" {
 		return
 	}
@@ -87,7 +87,7 @@ func EventRoleRemove(s *dg.Session, m *dg.MessageDelete) {
 
 // 											***		helpEvent		***
 
-func helpEvent(s *dg.Session, chnID string) {
+func (r *Mux) helpEvent(s *dg.Session, chnID string) {
 	desc := fmt.Sprintf(`
 **Description**:  EventStart will start an instance of an event for that channel
 So afterwards if any member of that event types any message

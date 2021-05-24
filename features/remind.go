@@ -2,7 +2,7 @@ package features
 
 import (
 	"fmt"
-	t "time"
+	"time"
 
 	dg "github.com/bwmarrin/discordgo"
 )
@@ -20,7 +20,7 @@ func (r *Mux) Remind(s *dg.Session, m *dg.MessageCreate) {
 		r.helpRemind(s, m.ChannelID)
 		return
 	}
-	timer, err := t.ParseDuration(rem[1])
+	timer, err := time.ParseDuration(rem[1])
 	if err != nil {
 		timeError := &dg.MessageEmbed{
 			Type:  "rich",
@@ -48,7 +48,7 @@ func (r *Mux) Remind(s *dg.Session, m *dg.MessageCreate) {
 		fmt.Println(err.Error())
 		return
 	}
-	t.Sleep(timer)
+	time.Sleep(timer)
 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@%s> here is the reminder you asked \n%s", m.Author.ID, rem[2]))
 
 }
@@ -63,7 +63,7 @@ func (r *Mux) helpRemind(s *dg.Session, chnID string) {
 **Example**:
 %sremind 10m turn off microwave
 %sremind 1h start a pole
-	`, botPrefix, botPrefix, botPrefix)
+	`, r.botPrefix, r.botPrefix, r.botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       "\n**Command**: remind",

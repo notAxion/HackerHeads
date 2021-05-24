@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -12,12 +13,12 @@ type muteTime struct {
 }
 
 // use natural join to get the role as well
-func SaveUnmuteTime(gID, userID string, unmuteTime time.Time) error {
-	_, err := PQ.Exec(`
-		INSERT INTO `+tableMuteTime+` (guild_id, user_id, duration)
-		VALUES
-		($1, $2, $3)
-		;`, gID, userID, unmuteTime)
+func (db *DB) SaveUnmuteTime(gID, userID string, unmuteTime time.Time) error {
+	_, err := db.Exec(`
+	INSERT INTO `+tableMuteTime+` (guild_id, user_id, duration)
+	VALUES
+	($1, $2, $3)
+	;`, gID, userID, unmuteTime)
 	if err != nil {
 		fmt.Println("Insert unmute error")
 		return err
@@ -25,11 +26,11 @@ func SaveUnmuteTime(gID, userID string, unmuteTime time.Time) error {
 	return nil
 }
 
-func DeleteUnmuteTime(gID, userID string) error {
-	_, err := PQ.Exec(`
+func (db *DB) DeleteUnmuteTime(gID, userID int64) error {
+	_, err := db.Exec(`
 		DELETE FROM `+tableMuteTime+` 
 		WHERE guild_id=$1 
-			AND user_id=$2
+		AND user_id=$2
 		;`, gID, userID)
 	if err != nil {
 		fmt.Println("Delete unmute error")
@@ -38,9 +39,9 @@ func DeleteUnmuteTime(gID, userID string) error {
 	return nil
 }
 
-func GetMutedUsers() ([]muteTime, error) {
+func (db *DB) GetMutedUsers() ([]muteTime, error) {
 	users := make([]muteTime, 0, 10) //*todo inc cap if hosting
-	err := PQ.Select(&users, `
+	err := db.Select(&users, `
 		SELECT * FROM `+tableMuteTime+`
 		;`)
 	if err != nil {
@@ -50,14 +51,35 @@ func GetMutedUsers() ([]muteTime, error) {
 	return users, nil
 }
 
-type XMap map[string]time.Time
+type User struct {
+	GID int64
+	UID int64
+}
+
+func FromString(gID, uID string) User {
+	g, _ := strconv.ParseInt(gID, 10, 64)
+	u, _ := strconv.ParseInt(uID, 10, 64)
+	usr := User{
+		GID: g,
+		UID: u,
+	}
+	return usr
+}
+
+func (usr *User) ToString() (gID, uID string) {
+	gID = strconv.FormatInt(usr.GID, 10)
+	uID = strconv.FormatInt(usr.UID, 10)
+	return
+}
+
+type XMap map[User]time.Time
 
 // take a XMap as a param
-func TGetMutedUsers() (XMap, error) {
+func (db *DB) TGetMutedUsers() (XMap, error) {
 	users := make(XMap)
-	rows, err := PQ.Queryx(`
+	rows, err := db.Queryx(`
 	SELECT * FROM ` + tableMuteTime + `
-		;`)
+	;`)
 	defer func() {
 		err := rows.Close()
 		if err != nil {
@@ -65,10 +87,18 @@ func TGetMutedUsers() (XMap, error) {
 		}
 	}()
 	for rows.Next() {
-		usr := muteTime{}
-		rows.StructScan(&usr)
-		k := usr.GID + " " + usr.UserID
-		users[k] = usr.UnmuteTime
+		var gID, uID int64
+		var unmuteTime time.Time
+		err := rows.Scan(&gID, &uID, &unmuteTime)
+		if err != nil {
+			fmt.Println("someone's scan had an error")
+			return nil, err
+		}
+		k := User{
+			gID,
+			uID,
+		}
+		users[k] = unmuteTime
 	}
 	if err != nil {
 		fmt.Println("unmute rows scan error")

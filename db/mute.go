@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-func MuteRoleID(gID string) (string, error) {
+func (db *DB) MuteRoleID(gID string) (string, error) {
 	var roleID string
 
-	err := PQ.QueryRowx(`
+	err := db.QueryRowx(`
 		SELECT role_id from `+tableMute+` 
 		where guild_id =$1
 		;`, gID).Scan(&roleID)
@@ -23,8 +23,8 @@ func MuteRoleID(gID string) (string, error) {
 	return roleID, nil
 }
 
-func UpsertRole(gID, roleID string) error {
-	_, err := PQ.Exec(`
+func (db *DB) UpsertRole(gID, roleID string) error {
+	_, err := db.Exec(`
 		INSERT INTO `+tableMute+` (guild_id, role_id)
 		VALUES
 			($1, $2)

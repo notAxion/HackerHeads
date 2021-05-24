@@ -63,7 +63,7 @@ func (r *Mux) Warn(s *dg.Session, m *dg.MessageCreate) {
 //												*** 	helpWarn	***
 
 func (r *Mux) helpWarn(s *dg.Session, chnID string) {
-	desc := fmt.Sprintf("\n**Description**: warn those noobs who don't follow the rules.\n**Usage**: %swarn [@user] [reason]  \n**Example**:\n\t%swarn @noobSpammer stop the spam please", botPrefix, botPrefix)
+	desc := fmt.Sprintf("\n**Description**: warn those noobs who don't follow the rules.\n**Usage**: %swarn [@user] [reason]  \n**Example**:\n\t%swarn @noobSpammer stop the spam please", r.botPrefix, r.botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       "\n**Command**: warn",

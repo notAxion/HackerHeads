@@ -79,8 +79,14 @@ func (r *Mux) muteAllArgs(s *dg.Session, m *dg.MessageCreate, user *dg.User, arg
 }
 
 func (r *Mux) muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur time.Duration, reason string) {
-	// if dur < 0 { no duration}
-	muteRoleID, err := r.muteRole(s, m)
+	if reason == "" {
+		reason = "for no reason lol"
+	}
+	// if dur < 30*time.Second {
+	// s.ChannelMessageSend(m.ChannelID, "Give at least a 30s mute ||u dumb||")
+	// }
+
+	muteRoleID, err := r.muteRole(s, m.GuildID)
 	if err != nil {
 		fmt.Println("mute role error ", err)
 		return
@@ -112,10 +118,11 @@ func (r *Mux) muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur
 		if dmOpen {
 			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason))
 		}
-		// tmp := time.Now().Add(dur)
-		// db.SaveUnmuteTime(guild.ID, user.ID, tmp)
+		tmp := time.Now().Add(dur)
+		r.AddTimer(db.FromString(m.GuildID, user.ID), tmp)
+		r.PQ.SaveUnmuteTime(m.GuildID, user.ID, tmp)
 		// time.Sleep(dur) // use time.After and also check the timezone while selecting also do everything in utc time
-		r.Unmute(s, m)
+		// r.Unmute(s, m)
 
 	} else { // no mute duration
 		if dmOpen {
@@ -133,7 +140,7 @@ however then can see the message history and will be able to connect in the chan
 **Usage**: %smute [@user] <limit> [reason]  
 **Example**:
 %smute @raider 3d now cry in a corner
-	`, botPrefix, botPrefix)
+	`, r.botPrefix, r.botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       "\n**Command**: mute",
@@ -151,8 +158,8 @@ however then can see the message history and will be able to connect in the chan
 
 //												***		createMuteRole		***
 
-func (r *Mux) createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.Role, err error) {
-	muteRole, err = s.GuildRoleCreate(m.GuildID)
+func (r *Mux) createMuteRole(s *dg.Session, guildID string) (muteRole *dg.Role, err error) {
+	muteRole, err = s.GuildRoleCreate(guildID)
 	if err != nil {
 		return
 	}
@@ -161,7 +168,7 @@ func (r *Mux) createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.R
 	var perm int64 = 0x400 | 0x10000 | 0x100000
 
 	_, err = s.GuildRoleEdit(
-		m.GuildID, muteRole.ID, "Muted",
+		guildID, muteRole.ID, "Muted",
 		0x6b6b6b, false, perm, false) // bools are hoist and
 	if err != nil {
 		return
@@ -172,28 +179,27 @@ func (r *Mux) createMuteRole(s *dg.Session, m *dg.MessageCreate) (muteRole *dg.R
 //												***		muteRole		***
 
 // muteRole
-func (r *Mux) muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
-	gID := m.GuildID
-	roleID, err := db.MuteRoleID(gID)
+func (r *Mux) muteRole(s *dg.Session, guildID string) (string, error) {
+	roleID, err := r.PQ.MuteRoleID(guildID)
 	if err != sql.ErrNoRows && err != nil {
 		fmt.Println("features.muteRole error")
 		return "", err
 	}
-	valid := r.validRoleID(s, m, roleID)
+	valid := r.validRoleID(s, guildID, roleID)
 
 	if err == sql.ErrNoRows || !valid { // err = new guild, !valid = something wrong with role
-		newRole, err := r.createMuteRole(s, m)
+		newRole, err := r.createMuteRole(s, guildID)
 		if err != nil {
 			fmt.Println("create role error")
 			return "", err
 		}
 
-		if err = db.UpsertRole(gID, newRole.ID); err != nil {
+		if err = r.PQ.UpsertRole(guildID, newRole.ID); err != nil {
 			fmt.Println("Upsert in DB error")
 			return "", err
 		}
 
-		if err = r.revokeChannelPerms(s, m, newRole.ID); err != nil {
+		if err = r.revokeChannelPerms(s, guildID, newRole.ID); err != nil {
 			fmt.Println("revoke Channel perms error")
 			return "", err
 		}
@@ -206,8 +212,8 @@ func (r *Mux) muteRole(s *dg.Session, m *dg.MessageCreate) (string, error) {
 
 // revokeChannelPerms will go on each channels of the guild
 // when a mute command is called called for the first time in a guild
-func (r *Mux) revokeChannelPerms(s *dg.Session, m *dg.MessageCreate, muteRoleID string) error {
-	chans, err := s.GuildChannels(m.GuildID)
+func (r *Mux) revokeChannelPerms(s *dg.Session, guildID, muteRoleID string) error {
+	chans, err := s.GuildChannels(guildID)
 	if err != nil {
 		return err
 	}

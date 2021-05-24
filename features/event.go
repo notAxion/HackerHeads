@@ -2,7 +2,7 @@ package features
 
 import (
 	"fmt"
-	str "strings"
+	"strings"
 
 	dg "github.com/bwmarrin/discordgo"
 )
@@ -27,7 +27,7 @@ func (r *Mux) EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check th
 		return
 	}
 	eventRoleID := args[2]
-	valid := r.validRoleID(s, m, eventRoleID)
+	valid := r.validRoleID(s, m.GuildID, eventRoleID)
 	if !valid {
 		roleinvalidEmbed := &dg.MessageEmbed{
 			Type:        "rich",
@@ -41,7 +41,7 @@ func (r *Mux) EventStart(s *dg.Session, m *dg.MessageCreate) { //# todo check th
 		}
 		return
 	}
-	eventMap[m.ChannelID] = eventRoleID
+	r.eventMap[m.ChannelID] = eventRoleID
 	s.ChannelMessageSend(m.ChannelID, "event is started")
 
 }
@@ -52,34 +52,34 @@ func (r *Mux) EventRoleAdd(s *dg.Session, m *dg.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	if eventMap[m.ChannelID] == "" {
+	if r.eventMap[m.ChannelID] == "" {
 		return
 	}
 
 	//This if part will check for the event stop command and will stop the event
-	if str.HasPrefix(m.Content, botPrefix) {
+	if strings.HasPrefix(m.Content, r.botPrefix) {
 		args := fieldsN(m.Content[1:], 2)
 		if len(args) == 0 {
 			return
 		}
 		if args[0] == "event" && args[1] == "stop" {
-			eventMap[m.ChannelID] = ""
+			r.eventMap[m.ChannelID] = ""
 			s.ChannelMessageSend(m.ChannelID, "event has stopped")
 			return
 		}
 	}
-	eventRoleID := eventMap[m.ChannelID]
+	eventRoleID := r.eventMap[m.ChannelID]
 	err := s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, eventRoleID)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 }
 func (r *Mux) EventRoleRemove(s *dg.Session, m *dg.MessageDelete) {
-	if eventMap[m.BeforeDelete.ChannelID] == "" {
+	if r.eventMap[m.BeforeDelete.ChannelID] == "" {
 		return
 	}
-	err := s.GuildMemberRoleRemove(m.BeforeDelete.GuildID, m.BeforeDelete.Author.ID, eventMap[m.BeforeDelete.ChannelID])
-	fmt.Println(m.BeforeDelete.GuildID, m.BeforeDelete.Author.ID, eventMap[m.BeforeDelete.ChannelID])
+	err := s.GuildMemberRoleRemove(m.BeforeDelete.GuildID, m.BeforeDelete.Author.ID, r.eventMap[m.BeforeDelete.ChannelID])
+	fmt.Println(m.BeforeDelete.GuildID, m.BeforeDelete.Author.ID, r.eventMap[m.BeforeDelete.ChannelID])
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -98,7 +98,7 @@ and removes the role when a message is deleted within the event period.
 **Example**:
 %sevent start @participant 
 %sevent stop
-	`, botPrefix, botPrefix, botPrefix)
+	`, r.botPrefix, r.botPrefix, r.botPrefix)
 	helpEmbed := &dg.MessageEmbed{
 		Type:        "rich",
 		Title:       "\n**Command**: event",

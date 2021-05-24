@@ -10,6 +10,7 @@ import (
 
 var BotID string
 
+// Start works like listenAndServe it will block until exit is called
 func Start() {
 	goBot, err := dg.New("Bot " + config.Token)
 	if err != nil {
@@ -40,6 +41,7 @@ func Start() {
 		return
 	}
 	fmt.Println("Bot is Running")
+	<-make(chan struct{})
 }
 
 func test(s *dg.Session, m *dg.MessageCreate) {
@@ -51,7 +53,7 @@ func test(s *dg.Session, m *dg.MessageCreate) {
 	// }
 
 	// if len(m.Content) > 3 && m.Content[:4] != "test" {
-	if len(m.Content) > 3 && m.Content != "test" {
+	if len(m.Content) < 3 && m.Content != "test" {
 		return
 	}
 

@@ -20,12 +20,10 @@ func init() {
 	dbPass = os.Getenv(constants.Pass)
 	driverName = os.Getenv(constants.DriverName)
 
-	PQ = NewDB() // prepareing bindvars is $n
 }
 
 var (
 	dbName, tableMute, tableMuteTime, dbUser, dbPass, driverName string
-	PQ                                                           *DB
 )
 
 type DB struct {
@@ -35,7 +33,8 @@ type DB struct {
 // NewDB will connect to Postgres // *todo add a recover maybe && change sslmode
 func NewDB() *DB {
 	defer fmt.Println("Database Set.")
-	sourceName := fmt.Sprintf(`user %s dbname %s password %s sslmode=disable
-								`, dbUser, dbName, dbPass)
+	sourceName := fmt.Sprintf(`
+		user=%s dbname=%s password=%s sslmode=disable
+		`, dbUser, dbName, dbPass)
 	return &DB{sqlx.MustConnect(driverName, sourceName)}
 }

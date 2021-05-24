@@ -2,5 +2,5 @@
 secrets.json
 git.bat
 src_github
-#secrets
+secrets
 *.sql

@@ -2,45 +2,18 @@ package main
 
 import (
 	"fmt"
-	"./bot"
-	"./config"
-)
 
+	"github.com/notAxion/HackerHeads/bot"
+	"github.com/notAxion/HackerHeads/config"
+)
 
 func main() {
 	err := config.ReadConfig()
-	
+
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("Config fail", err)
 		return
 	}
-	
+
 	bot.Start()
-	
-	<- make(chan struct{})
-	return 
 }
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	

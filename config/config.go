@@ -7,22 +7,11 @@ import (
 )
 
 var (
-	Token     string 
+	Token     string
 	BotPrefix string
 
 	// Config ConfigsType
 )
-
-var c struct{ 
-	BotPrefix string `json:"bot_prefix"`
-}
-var s struct{ Token string `json:"token"` }
-
-
-// type ConfigsType struct {
-// 	Token     string `json:"token"`
-// 	BotPrefix string `json:"bot_prefix"`
-// }
 
 func ReadConfig() error {
 	fmt.Println("Reading from config file...")
@@ -39,14 +28,17 @@ func ReadConfig() error {
 
 	fmt.Println("reading working")
 
-
-	err = json.Unmarshal(cbs, &c)
-	if err != nil {
+	var c struct {
+		BotPrefix string `json:"bot_prefix"`
+	}
+	var s struct {
+		Token string `json:"token"`
+	}
+	if err = json.Unmarshal(cbs, &c); err != nil {
 		return err
 	}
 
-	err = json.Unmarshal(sbs, &s)
-	if err != nil {
+	if err = json.Unmarshal(sbs, &s); err != nil {
 		return err
 	}
 

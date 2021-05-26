@@ -8,8 +8,6 @@ import (
 	"github.com/notAxion/HackerHeads/features"
 )
 
-var BotID string
-
 // Start works like listenAndServe it will block until exit is called
 func Start() {
 	goBot, err := dg.New("Bot " + config.Token)
@@ -45,7 +43,7 @@ func Start() {
 }
 
 func test(s *dg.Session, m *dg.MessageCreate) {
-	if m.Author.ID == BotID {
+	if m.Author.Bot {
 		return
 	}
 	// if len(m.Content) < 4 {

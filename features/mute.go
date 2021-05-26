@@ -28,6 +28,10 @@ func (r *Mux) Mute(s *dg.Session, m *dg.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("```I can't find that user, %s```", args[1]))
 		return
 	}
+	if m.Author.ID == user.ID || user.Bot {
+		r.MuteReply(s, m, user, "")
+		return
+	}
 	switch {
 	case len(args) == 1:
 		r.helpMute(s, m.ChannelID)
@@ -82,9 +86,10 @@ func (r *Mux) muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur
 	if reason == "" {
 		reason = "for no reason lol"
 	}
-	// if dur < 30*time.Second {
-	// s.ChannelMessageSend(m.ChannelID, "Give at least a 30s mute ||u dumb||")
-	// }
+	if dur > 0 && dur < 30*time.Second {
+		s.ChannelMessageSend(m.ChannelID, "Give at least a 30s mute ||u dumb||")
+		return
+	}
 
 	muteRoleID, err := r.muteRole(s, m.GuildID)
 	if err != nil {
@@ -98,13 +103,35 @@ func (r *Mux) muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur
 	}
 
 	// sending final message of success to the channel
+	r.MuteReply(s, m, user, reason)
+	if dur > 0 {
+		tmp := time.Now().Add(dur)
+		r.AddTimer(db.FromString(m.GuildID, user.ID), tmp)
+		r.PQ.SaveUnmuteTime(m.GuildID, user.ID, tmp)
+	}
+
+}
+
+func (r *Mux) MuteReply(s *dg.Session, m *dg.MessageCreate, user *dg.User, reason string) {
 	muteEmbed := &dg.MessageEmbed{
 		Type:  "rich",
 		Title: fmt.Sprintf(":white_check_mark: *%s#%s has been muted. \u200e*", user.Username, user.Discriminator),
+		Footer: &dg.MessageEmbedFooter{
+			Text: "bye bye",
+		},
 		Color: 0x00fa00,
 	}
-	if _, err = s.ChannelMessageSendEmbed(m.ChannelID, muteEmbed); err != nil {
+	if m.Author.ID == user.ID || user.Bot {
+		uNoob := "https://t4.ftcdn.net/jpg/01/35/86/23/240_F_135862342_Q3LJPMyd8LLhBm4fPPRhemy8CczBzr4G.jpg"
+		muteEmbed.Title += "||jk||"
+		muteEmbed.Footer.Text = "\u200e"
+		muteEmbed.Footer.IconURL = uNoob
+	}
+	if _, err := s.ChannelMessageSendEmbed(m.ChannelID, muteEmbed); err != nil {
 		fmt.Println(err)
+	}
+	if m.Author.ID == user.ID {
+		return
 	}
 
 	var dmOpen bool
@@ -114,20 +141,9 @@ func (r *Mux) muteComplex(s *dg.Session, m *dg.MessageCreate, user *dg.User, dur
 	}
 
 	guild, _ := s.Guild(m.GuildID)
-	if dur > 0 { // with mute duration
-		if dmOpen {
-			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason))
-		}
-		tmp := time.Now().Add(dur)
-		r.AddTimer(db.FromString(m.GuildID, user.ID), tmp)
-		r.PQ.SaveUnmuteTime(m.GuildID, user.ID, tmp)
-		// time.Sleep(dur) // use time.After and also check the timezone while selecting also do everything in utc time
-		// r.Unmute(s, m)
-
-	} else { // no mute duration
-		if dmOpen {
-			s.ChannelMessageSend(muteDMChan.ID, fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason))
-		}
+	if dmOpen {
+		msg := fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason)
+		s.ChannelMessageSend(muteDMChan.ID, msg)
 	}
 }
 

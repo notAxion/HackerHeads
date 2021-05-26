@@ -2,6 +2,7 @@ package features
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	dg "github.com/bwmarrin/discordgo"
@@ -9,17 +10,11 @@ import (
 	"github.com/notAxion/HackerHeads/db"
 )
 
-type muteTime struct {
-	GID, UserID string
-	UnmuteTime  time.Time
-}
-
-// var muteDone map[string]chan struct{}
 // 												***		U N M U T E 	***
 
 // *todo make a helpUnmute
 func (r *Mux) Unmute(s *dg.Session, m *dg.MessageCreate) {
-	args := fieldsN(m.Content, -1) // *todo add reason
+	args := fieldsN(m.Content, -1)
 	if len(args) < 2 {
 		r.helpMute(s, m.ChannelID) //!valid or just checking help mute
 		return
@@ -45,9 +40,13 @@ func (r *Mux) Unmute(s *dg.Session, m *dg.MessageCreate) {
 		fmt.Println(err)
 		return
 	}
+	var reason string
+	if len(args) > 2 {
+		reason = strings.Join(args[3:], " ")
+	}
 
 	// sending final message of success to the channel
-	err = r.UnmuteReply(s, m.ChannelID, user)
+	err = r.UnmuteReply(s, m.ChannelID, user, reason)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -67,10 +66,10 @@ func (r *Mux) UnmuteUser(s *dg.Session, guildID, userID string) error {
 	return nil
 }
 
-func (r *Mux) UnmuteReply(s *dg.Session, channelID string, user *dg.User) error {
+func (r *Mux) UnmuteReply(s *dg.Session, channelID string, user *dg.User, res string) error {
 	title := fmt.Sprintf(`
-		:white_check_mark: *%s#%s has been unmuted. `+"\u200e"+`*
-		`, user.Username, user.Discriminator)
+		:white_check_mark: *%s#%s has been unmuted %s %s*
+		`, user.Username, user.Discriminator, res, "\u200e")
 	unmuteEmbed := &dg.MessageEmbed{
 		Type:  "rich",
 		Title: title,
@@ -91,11 +90,7 @@ func (r *Mux) SetAllMutedTimer() {
 		fmt.Println(err)
 	}
 	for user, t := range users {
-		fmt.Println(user) // check this
-		fmt.Println(t)
 		r.AddTimer(user, t)
-		// timer will be here
-		// delete the key when unmute
 	}
 
 }

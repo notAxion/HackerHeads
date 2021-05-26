@@ -46,28 +46,11 @@ func test(s *dg.Session, m *dg.MessageCreate) {
 	if m.Author.Bot {
 		return
 	}
-	// if len(m.Content) < 4 {
-	// return
-	// }
 
 	// if len(m.Content) > 3 && m.Content[:4] != "test" {
 	if len(m.Content) < 3 && m.Content != "test" {
 		return
 	}
 
-	// if features.ValidRoleID(s, m, m.Content[5:]) {
-	// s.ChannelMessageSend(m.ChannelID, "exists")
-	// } else {
-	// s.ChannelMessageSend(m.ChannelID, "nope")
-	// }
-	// args := [2]string{m.Content[5:23], m.Content[24:31]}
-	// fmt.Println(args[0], args[1])
-	// s.ChannelMessageSend(args[0], args[1])
-
-	// id , valid := features.ValidRoleID(s, m, m.Content[5:])
-	// if valid {
-	// 	s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@&%s> exists", id))
-	// } else {
-	// 	s.ChannelMessageSend(m.ChannelID, "Doesnt exist")
-	// }
 }
+

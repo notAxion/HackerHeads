@@ -11,12 +11,6 @@ import (
 	dg "github.com/bwmarrin/discordgo"
 )
 
-// feature : .dc @mention to disconnect someone @me diconnect the user
-//			.raidmute @mention1, @mention2 , ....
-// how about a website which would control the bot 🤔
-
-// *todo change pg_hba.conf inside ~/docker/volumes/postgres/ for adding password
-
 func init() {
 	// SetAllMutedTimer()
 }
@@ -24,6 +18,7 @@ func init() {
 type User struct {
 	GID int64
 	UID int64
+
 }
 
 // Mux have all the handlers for every features
@@ -64,5 +59,3 @@ func (r *Mux) Ping(s *dg.Session, m *dg.MessageCreate) {
 	ping := v.Sub(u)
 	s.ChannelMessageEdit(m.ChannelID, msg.ID, fmt.Sprintf("pong - `%dms`", ping.Milliseconds()))
 }
-
-//-----------------------------------------------------------||-----------------------------------------------------------

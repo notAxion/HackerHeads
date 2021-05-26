@@ -1,2 +1,3 @@
-this is beta branch for test pruposes
-and to sync with other devices
+
+just trying out discord bot in master branch
+

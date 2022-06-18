@@ -68,12 +68,19 @@ func validID(s *dg.Session, m *dg.MessageCreate, id string ) bool  {
 }*/
 
 func command(s string) string {
-	cmd := make([]rune, 0, 10)
-	for i, val := range s {
-		if i == 0 {
-			continue
+	cmd := make([]byte, 0, 7)
+	var i int
+	for i = 0; i < len(s); i++ {
+		if s[i] != ' ' {
+			break
 		}
+	}
+	for ; i < len(s); i++ {
+		val := s[i]
 		if val != ' ' {
+			if 'A' <= val && val <= 'Z' {
+				val += 'a' - 'A'
+			}
 			cmd = append(cmd, val)
 		} else {
 			break

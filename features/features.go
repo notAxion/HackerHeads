@@ -18,7 +18,14 @@ func init() {
 type User struct {
 	GID int64
 	UID int64
+}
 
+type connConfig struct {
+	// this two strings should be m.Author.ID
+	connectMap  map[string]string
+	StartDone   map[string]chan struct{}
+	MsgCh       chan *dg.Message
+	guildConfig map[string]*relayConfig
 }
 
 // Mux have all the handlers for every features
@@ -29,8 +36,13 @@ type Mux struct {
 	PQ        *db.DB
 	// stores the eventRoleID for each channel (map[ChannelID]eventRoleID)
 	// go to EventStop for more info # thanks to chanbakjsd from gophers
-	eventMap map[string]string
-	muteDone map[db.User]chan struct{} // change it to a type of two 2 int64(s)
+	eventMap    map[string]string
+	memeMap     map[string][]meme
+	topMemes    map[string]*memeCache
+	ConnCfg     *connConfig
+	muteDone    map[db.User]chan struct{}
+	Cooldown    map[string]bool
+	GuildPrefix map[string]string
 }
 
 func NewRouter(bID string) *Mux {
@@ -39,9 +51,20 @@ func NewRouter(bID string) *Mux {
 		botID:     bID,
 		PQ:        db.NewDB(),
 		eventMap:  make(map[string]string),
-		muteDone:  make(map[db.User]chan struct{}),
+		memeMap:   make(map[string][]meme),
+		topMemes:  make(map[string]*memeCache),
+		ConnCfg: &connConfig{
+			connectMap:  make(map[string]string),
+			StartDone:   make(map[string]chan struct{}),
+			guildConfig: make(map[string]*relayConfig),
+		},
+		muteDone:    make(map[db.User]chan struct{}),
+		Cooldown:    make(map[string]bool),
+		GuildPrefix: make(map[string]string),
 	}
 	r.SetAllMutedTimer()
+	r.SetAllPrefix()
+	go r.cacheTopMemes()
 	return r
 }
 
@@ -58,4 +81,17 @@ func (r *Mux) Ping(s *dg.Session, m *dg.MessageCreate) {
 	v := time.Now()
 	ping := v.Sub(u)
 	s.ChannelMessageEdit(m.ChannelID, msg.ID, fmt.Sprintf("pong - `%dms`", ping.Milliseconds()))
+}
+
+func (r *Mux) Whois(s *dg.Session, m *dg.MessageCreate) {
+	args := fieldsN(m.Content[1:], -1)
+	if len(args) < 2 {
+		return
+	}
+	user, valid := r.validUserID(s, m, args[1])
+	if !valid {
+		s.ChannelMessageSend(m.ChannelID, "nope")
+		return
+	}
+	s.ChannelMessageSend(m.ChannelID, user.Username)
 }

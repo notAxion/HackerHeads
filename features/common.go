@@ -89,21 +89,47 @@ func fieldsN(s string, n int) []string {
 	}
 	end, i := 1, 0
 	for i = range s {
-		if i != 0 && s[i-1] == ' ' {
-			continue
-		}
+		// if i != 0 && s[i-1] == ' ' {
+		// 	continue
+		// }
 		if s[i] == ' ' {
-			end++
+			end++ // counting the number of spaces
+			// inn:
+			for ; i < len(s); i++ { // trim all the extra space
+				if s[i] != ' ' {
+					break
+				}
+			}
 		}
 		if s[i] != ' ' && end == n {
-			break
+			break // if it finds n number of spaces it breaks
 		}
 	}
-	if end != n {
+	if end != n { // if it dosn't have n number of words it returns this
 		return []string{}
 	}
 	args := strings.Fields(s[:i-1])
-	args = append(args, s[i-1:]) // appending rest of the string
+	args = append(args, s[i:]) // appending rest of the string
 
 	return args
+}
+
+// userHandler would tunnel the messages to a channel
+// use a buffered channel
+// for a specified user in a discord channel
+// userChanID = user.ID + channel.ID
+// doneStr = would close msgCh / cancel string
+// msgCh = messages would tunnel through this
+// it would return a remove func to remove handler
+func (r *Mux) userHandler(s *dg.Session, userChanID, doneStr string, msgCh chan<- string) func() {
+	return s.AddHandler(func(s *dg.Session, m *dg.MessageCreate) {
+		handleruser := m.Author.ID + m.ChannelID
+		if userChanID == handleruser {
+			if m.Content == doneStr {
+				close(msgCh)
+				return
+			}
+			msgCh <- m.Content
+		}
+	})
 }

@@ -122,10 +122,16 @@ func (r *Mux) MuteReply(s *dg.Session, m *dg.MessageCreate, user *dg.User, reaso
 		Color: 0x00fa00,
 	}
 	if m.Author.ID == user.ID || user.Bot {
-		uNoob := "https://t4.ftcdn.net/jpg/01/35/86/23/240_F_135862342_Q3LJPMyd8LLhBm4fPPRhemy8CczBzr4G.jpg"
+		uNoob := "https://cdn.discordapp.com/attachments/770684873215180850/847698654386847754/240_F_135862342_Q3LJPMyd8LLhBm4fPPRhemy8CczBzr4G_280.jpg"
 		muteEmbed.Title += "||jk||"
 		muteEmbed.Footer.Text = "\u200e"
-		muteEmbed.Footer.IconURL = uNoob
+		// muteEmbed.Footer.IconURL = uNoob
+		muteEmbed.Image = &dg.MessageEmbedImage{
+			URL: uNoob,
+		}
+		// muteEmbed.Thumbnail = &dg.MessageEmbedThumbnail{
+		// URL: uNoob,
+		// }
 	}
 	if _, err := s.ChannelMessageSendEmbed(m.ChannelID, muteEmbed); err != nil {
 		fmt.Println(err)
@@ -140,7 +146,7 @@ func (r *Mux) MuteReply(s *dg.Session, m *dg.MessageCreate, user *dg.User, reaso
 		dmOpen = true
 	}
 
-	guild, _ := s.Guild(m.GuildID)
+	guild, _ := s.State.Guild(m.GuildID)
 	if dmOpen {
 		msg := fmt.Sprintf("you were muted from %s | %s.", guild.Name, reason)
 		s.ChannelMessageSend(muteDMChan.ID, msg)

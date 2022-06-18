@@ -2,6 +2,7 @@ package features
 
 import (
 	"strings"
+	"time"
 
 	dg "github.com/bwmarrin/discordgo"
 )
@@ -13,7 +14,11 @@ func (r *Mux) MessageCreate(s *dg.Session, m *dg.MessageCreate) {
 		if m.Author.ID == r.botID || m.Author.Bot {
 			return
 		}
-		cmd := command(m.Content)
+		cmd := command(m.Content[1:])
+		if _, ok := r.Cooldown[cmd+m.Author.ID]; ok {
+			s.ChannelMessageSend(m.ChannelID, "take A chil pill this command is in cooldown")
+			return
+		}
 		switch cmd {
 		case "event":
 			r.EventStart(s, m)
@@ -27,9 +32,37 @@ func (r *Mux) MessageCreate(s *dg.Session, m *dg.MessageCreate) {
 			r.Warn(s, m)
 		case "unmute":
 			r.Unmute(s, m)
+		case "dc":
+			r.DC(s, m)
+		// case "whois":
+		// 	r.Whois(s, m)
+		case "connect-server":
+			r.ConnectServer(s, m)
+		case "meme":
+			r.meme(s, m)
+		case "prefix":
+			r.Prefix(s, m)
+		case "make-meme": // don't commit
+			r.CaptionMeme(s, m)
+		case "makememe": // don't commit
+			r.CaptionMeme(s, m)
+		case "clean-mess": // don't commit
+			r.CleanWebhook(s, m)
 		default:
-			s.ChannelMessageSend(m.ChannelID, "**WHAT !?** :thinking::thinking:")
+			if m.Author.ID == "663985628194668566" {
+				return
+			}
+			s.ChannelMessageSendReply(m.ChannelID, "**WHAT !?** :thinking::thinking:", m.Reference())
+			return
 		}
+		k := cmd + m.Author.ID
+		r.Cooldown[k] = true
+		go func() {
+			time.Sleep(3 * time.Second)
+			delete(r.Cooldown, k)
+		}()
+	} else {
+		r.ConnectServerRelay(s, m)
 	}
 
 	if m.Content == "hi bot" || m.Content == "Hi bot" {
